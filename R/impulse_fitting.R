@@ -1,36 +1,38 @@
-
 #' Fit Timecourses
 #'
+#' @param measurements a tibble containing:
+#' \itemize{
+#'   \item{tc_id: a unique indicator for each timecourse"},
+#'   \item{time: a numeric predictor variable},
+#'   \item{abundance: a numeric response variable}
+#'   }
+#' @param model model to fit:
+#' \itemize{
+#'   \item{sigmoid: one sigmoidal response},
+#'   \item{impulse: two sigmoidal responses}
+#'   }
+#'
 #' @examples
-#' timecourses <- expression_data %>%
-#'   dplyr::select(TF:gene, log2_fc = shrunken) %>%
-#'   dplyr::group_by(TF, strain, date, restriction, mechanism, gene) %>%
-#'   dplyr::filter(!(all(log2_fc == 0)))
+#' timecourses <- simulate_timecourses(n = 5)
 #'
-#' timecourses <- timecourses %>%
-#'  dplyr::left_join(
-#'    timecourses %>%
-#'    dplyr::ungroup() %>%
-#'    dplyr::distinct(TF, strain, date, restriction, mechanism, gene) %>%
-#'    dplyr::mutate(tc_id = 1:n()),
-#'    by = c("TF", "strain", "date", "restriction", "mechanism", "gene")) %>%
-#'    dplyr::ungroup() %>%
-#'    dplyr::select(tc_id, time, log2_fc) %>%
-#'    dplyr::mutate(time = as.numeric(as.character(time)))
+#' timecourses %>%
+#'   tidyr::unnest(measurements) %>%
+#'   # separate by true model
+#'   tidyr::nest(-true_model, .key = "measurements") %>%
+#'   # fit all models to each timecourse
+#'   tidyr::crossing(tibble::tibble(model = c("sigmoid", "impulse"))) %>%
+#'   dplyr::mutate(timecourse_params = purrr::map2(measurements, model, estimate_timecourse_params_tf, n_initializations = 10))
 #'
-#' timecourse_subset <- timecourses %>%
-#'   dplyr::filter(tc_id %in% 1:5)
-#'
-#' sigmoids <- fit_timecourses_tensorflow(timecourse_subset, model = "sigmoid", n_initializations = 50, use_prior = FALSE)
+#' sigmoids <- fit_timecourses_tensorflow(timecourses, model = "sigmoid", n_initializations = 50, use_prior = FALSE)
 #' impulses <- fit_timecourses_tensorflow(timecourse_subset, model = "impulse", n_initializations = 50, use_prior = FALSE)
 #'
 #' sigmoids <- fit_timecourses_tensorflow(timecourse_subset, model = "sigmoid", n_initializations = 60, use_prior = TRUE, verbose = TRUE)
 #' impulses <- fit_timecourses_tensorflow(timecourse_subset, model = "impulse", n_initializations = 60, use_prior = TRUE, verbose = TRUE)
 #'
 #' @export
-estimate_timecourse_params_tf <- function(timecourses, model = "sigmoid", n_initializations = 100, use_prior = TRUE,
-                                       prior_pars = c("v_sd" = 1.2, "rate_shape" = 2, "rate_scale" = 0.25, "time_shape" = 2, "time_scale" = 25),
-                                       verbose = FALSE) {
+estimate_timecourse_params_tf <- function(measurements, model = "sigmoid", n_initializations = 100, use_prior = TRUE,
+                                          prior_pars = c("v_sd" = 1.2, "rate_shape" = 2, "rate_scale" = 0.25, "time_shape" = 2, "time_scale" = 25),
+                                          verbose = FALSE) {
 
   if (!requireNamespace("tensorflow", quietly = TRUE)) {
     stop('The "tensorflow" package must be installed to use this function',
@@ -39,9 +41,16 @@ estimate_timecourse_params_tf <- function(timecourses, model = "sigmoid", n_init
     library(tensorflow)
   }
 
+  stopifnot("data.frame" %in% class(measurements))
+  required_vars <- c("tc_id", "time", "abundance")
+  missing_vars <- setdiff(required_vars, colnames(measurements))
+  if (length(missing_vars) != 0) {
+    stop ("required variables are missing from \"measurements\": ", paste(missing_vars, collapse = ", "))
+  }
+
   stopifnot(length(model) == 1, model %in% c("sigmoid", "impulse"))
 
-  stopifnot(length(n_initializations) == 1, class(n_initializations) %in% c("numeric", "integer"))
+  stopifnot(length(n_initializations) == 1, class(n_initializations) %in% c("numeric", "integer"), n_initializations > 20)
   n_initializations <- as.integer(n_initializations)
 
   stopifnot(length(use_prior) == 1, all(class(use_prior) == "logical"), use_prior %in% c(TRUE, FALSE))
@@ -169,18 +178,20 @@ estimate_timecourse_params_tf <- function(timecourses, model = "sigmoid", n_init
 
   all_timecourse_fits <- list()
   entry_number <- 0
-  for (a_tc_id in unique(timecourses$tc_id)) {
+  for (a_tc_id in unique(measurements$tc_id)) {
     entry_number <- entry_number + 1
 
-    print(paste0(a_tc_id, " timecourse running"))
+    if (verbose) {
+      print(paste0(a_tc_id, " timecourse running"))
+    }
 
-    one_timecourse <- timecourses %>%
+    one_timecourse <- measurements %>%
       dplyr::filter(tc_id == a_tc_id)
 
     # timecourse-specific data
 
     timecourse_dict = dict(timepts = matrix(one_timecourse$time, nrow = nrow(one_timecourse), ncol = n_initializations),
-                           expression = matrix(one_timecourse$log2_fc, nrow = nrow(one_timecourse), ncol = n_initializations))
+                           expression = matrix(one_timecourse$abundance, nrow = nrow(one_timecourse), ncol = n_initializations))
 
     sess <- tf$Session()
     # initialize parameters
@@ -188,9 +199,9 @@ estimate_timecourse_params_tf <- function(timecourses, model = "sigmoid", n_init
 
     # keep track of initialization for error checking
     initial_vals <- lapply(parameters,
-                           function(variable){tibble::data_frame(variable = variable,
-                                                                 init_id = 1:n_initializations,
-                                                                 value = sess$run(eval(parse(text = variable))))}) %>%
+                           function(variable){tibble::tibble(variable = variable,
+                                                             init_id = 1:n_initializations,
+                                                             value = sess$run(eval(parse(text = variable))))}) %>%
       dplyr::bind_rows()
 
     # find an NLS maxima from each initialization
@@ -212,7 +223,7 @@ estimate_timecourse_params_tf <- function(timecourses, model = "sigmoid", n_init
       }
 
       if (sum(!is.nan(current_losses)) < pmin(10, n_initializations)) {
-        warning("reinitializing due to too few valid parameter sets")
+        warning("reinitializing due to too few valid parameter sets\n")
         # if too few parameter sets are valid, reinitialize all parameters
         sess$run(tf$global_variables_initializer())
 
@@ -249,30 +260,14 @@ estimate_timecourse_params_tf <- function(timecourses, model = "sigmoid", n_init
     if (any(is.nan(current_losses))) {
       output$invalid_timecourse_fits <- initial_vals %>%
         dplyr::filter(init_id %in% which(is.nan(current_losses))) %>%
-        dplyr::mutate(tc_id = a_tc_id, model = model) %>%
-        dplyr::select(tc_id, model, init_id, variable, value)
+        dplyr::mutate(tc_id = a_tc_id) %>%
+        dplyr::select(tc_id, init_id, variable, value)
     } else {
       output$invalid_timecourse_fits <- data.frame()
     }
 
     # valid parameter set optimal parameters, fits, MSE
     valid_parameter_sets <- which(!is.nan(current_losses))
-
-    # timecourse fits
-
-    fit_expression_matrix <- sess$run(fit_expression, feed_dict = timecourse_dict)
-    colnames(fit_expression_matrix) <- 1:n_initializations
-    fit_expression_matrix <- fit_expression_matrix[,valid_parameter_sets]
-    fit_expression_matrix <- as.data.frame(fit_expression_matrix) %>%
-      dplyr::mutate(time = one_timecourse$time[1:n()])
-
-    output$timecourse <- one_timecourse %>%
-      dplyr::mutate(model = model) %>%
-      dplyr::left_join(
-        tidyr::gather(fit_expression_matrix, init_id, fitted, -time, convert = TRUE),
-        by = "time") %>%
-      dplyr::arrange(init_id, time) %>%
-      dplyr::select_(.dots = c('tc_id', setdiff(colnames(one_timecourse), c('tc_id', 'log2_fc', 'time')), 'model', 'init_id', 'time', 'log2_fc', 'fitted'))
 
     # fit parameters
 
@@ -282,19 +277,17 @@ estimate_timecourse_params_tf <- function(timecourses, model = "sigmoid", n_init
                                                                       value = sess$run(eval(parse(text = variable))))}) %>%
       dplyr::bind_rows() %>%
       dplyr::filter(init_id %in% valid_parameter_sets) %>%
-      dplyr::mutate(tc_id = a_tc_id, model = model) %>%
-      dplyr::select(tc_id, model = model, init_id, variable, value)
+      dplyr::mutate(tc_id = a_tc_id) %>%
+      dplyr::select(tc_id, init_id, variable, value)
 
     output$loss <- if (use_prior) {
       tibble::data_frame(tc_id = a_tc_id,
-                         model = model,
                          init_id = valid_parameter_sets,
                          loss = current_losses[valid_parameter_sets],
                          logLik = sess$run(normal_logLik, feed_dict = timecourse_dict)[valid_parameter_sets],
                          logPriorPr = sess$run(model_log_pr, feed_dict = timecourse_dict)[valid_parameter_sets])
     } else {
       tibble::data_frame(tc_id = a_tc_id,
-                         model = model,
                          init_id = valid_parameter_sets,
                          loss = current_losses[valid_parameter_sets])
     }
@@ -383,12 +376,12 @@ summarize_top_timecourses <- function(combined_timecourses, sufficiency_toleranc
 #' @param model sigmoid or impulse
 #'
 #' @examples
-#' timecourse_parameters <- tibble::data_frame(t_rise = 25, rate = 0.25, v_inter = 3, v_final = -3, t_fall = 45)
-#' timecourse_parameters <- tibble::data_frame(t_rise = 45, rate = 1, v_inter = 3)
+#' timecourse_parameters <- tibble::tibble(t_rise = 25, rate = 0.25, v_inter = 3, v_final = -3, t_fall = 45)
+#' timecourse_parameters <- tibble::tibble(t_rise = 45, rate = 1, v_inter = 3)
 #' fit_timecourse(timecourse_parameters, model = "sigmoid")
 #'
 #' @export
-fit_timecourse <- function (timecourse_parameters, timepts = seq(0, 90, by = 1), model = "sigmoid") {
+fit_timecourse <- function (timecourse_parameters, timepts = seq(0, 90, by = 1), model = "sigmoid", fit.label = "fit") {
 
   stopifnot("data.frame" %in% class(timecourse_parameters), nrow(timecourse_parameters) == 1)
   stopifnot(all(class(timepts) %in% c("numeric", "integer")), length(timepts) > 0)
@@ -415,5 +408,5 @@ fit_timecourse <- function (timecourse_parameters, timepts = seq(0, 90, by = 1),
   eval_times$fit <- eval(parse(text = eqtn), eval_times)
 
   eval_times %>%
-    dplyr::select(time, fit)
+    dplyr::select(time, !!fit.label := fit)
 }

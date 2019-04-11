@@ -12,39 +12,34 @@ sigmoid_impulse_plot <- function(timecourse_parameters) {
 
 #' Gene x TF Timecourse
 #'
-#' @inheritParams gene_tf_timecourse
-#' @param spread_kinetics sigmoids and impulse kinetic summaries for each timecourse
-#' @param quant_var a variable to use for fold changes
+#' @param timecourses a tibble with each row being model, tc_id, params and timecourses
+#' @param label.var an additional field to use for labelling timecourses
 #'
 #' @return a ggplot2 plot
 #'
 #' @export
-gene_tf_fits <- function(expression_tall_data,
-                         spread_kinetics,
-                         query_TF,
-                         query_gene,
-                         quant_var = "shrunken",
-                         time_trans = "identity") {
+gene_tf_fits <- function(timecourses,
+                         label.var = "tc_id") {
+
+  stopifnot(c("params", "measurements") %in% colnames(timecourses))
+  stopifnot(class(label.var) == "character", length(label.var) == 1, label.var %in% colnames(timecourses))
 
   # summary of all measurements
 
-  expression_measurements <- expression_tall_data %>%
-    dplyr::filter(TF == query_TF, gene == query_gene) %>%
-    dplyr::mutate(tf_label = paste(strain, date, restriction, mechanism, sep = "-"),
-                  time = as.numeric(as.character(time))) %>%
-    dplyr::rename(log2fc = !!rlang::sym(quant_var)) %>%
-    dplyr::select(tc_id, tf_label, time, log2fc)
+  if (nrow(timecourses) != 0) {
 
-  # find matching parametric fits
+    timecourses %>%
+      tidyr::unnest(timecourses)
 
-  reduced_kinetics <- spread_kinetics %>%
-    dplyr::inner_join(expression_measurements %>%
-                        dplyr::distinct(tc_id, tf_label), by = "tc_id") %>%
-    dplyr::mutate(kinetics = ifelse(is_impulse, "impulse", "sigmoid"))
+    fitted_values <- timecourses %>%
+      dplyr::mutate(fitted_timecourses = purrr::map2(params, model, fit_timecourse, timepts = timepts)) %>%
 
-  if (nrow(reduced_kinetics) != 0) {
 
-    timecourse_fits <- reduced_kinetics %>%
+    timecourse_fits <- timecourses %>%
+      dplyr::mutate(fits = purrr::map2(params, model, fit_timecourse, timepts = timepts)) %>%
+      dplyr::mutate(tc_id = 1:n())
+
+
       plyr::dlply(.variables = c("tc_id", "model")) %>%
       lapply(function(x){
         dynamicyeast::fit_timecourse(x, timepts = seq(0, max(expression_measurements$time)), model = x$model) %>%
@@ -52,12 +47,9 @@ gene_tf_fits <- function(expression_tall_data,
       }) %>%
       dplyr::bind_rows()
 
-    reduced_kinetics_is_model <- reduced_kinetics %>%
-      dplyr::filter(is_impulse & model == "impulse" | !is_impulse & model == "sigmoid")
-
-    time_aesthetics_df <- reduced_kinetics_is_model %>%
-      dplyr::select(tc_id, model, tf_label, t_rise, t_fall) %>%
-      tidyr::gather(par, value, -tc_id, -tf_label, -model) %>%
+    time_aesthetics_df <- params %>%
+      dplyr::select(tc_id, model, t_rise, t_fall) %>%
+      tidyr::gather(par, value, -tc_id, -model) %>%
       dplyr::filter(!is.na(value)) %>%
       dplyr::left_join(timecourse_fits %>%
                          dplyr::select(time, fit, tc_id, model), by = c("tc_id", "model")) %>%
