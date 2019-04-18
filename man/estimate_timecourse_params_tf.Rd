@@ -12,26 +12,38 @@ estimate_timecourse_params_tf(measurements, model = "sigmoid",
 \arguments{
 \item{measurements}{a tibble containing:
 \itemize{
-  \item{tc_id: a unique indicator for each timecourse"},
-  \item{time: a numeric predictor variable},
-  \item{abundance: a numeric response variable}
+  \item{\code{tc_id}: a unique indicator for each timecourse"},
+  \item{\code{time}: a numeric predictor variable},
+  \item{\code{abundance}: a numeric response variable}
   }}
 
 \item{model}{model to fit:
 \itemize{
-  \item{sigmoid: one sigmoidal response},
-  \item{impulse: two sigmoidal responses}
+  \item{\code{sigmoid}: one sigmoidal response},
+  \item{\code{impulse}: two sigmoidal responses}
   }}
+}
+\value{
+a timecourse list:
+\itemize{
+  \item{\code{invalid_timecourse_fits}: tibble of parameter initializations for initializations that went to NaN for debugging},
+  \item{\code{loss}: tibble of losses for each tc_id and inititalization (init_id)},
+  \item{\code{parameters}: tibble of final parameters for each tc_id and initialization (init_id)}
+  }
 }
 \description{
 Fit Timecourses
 }
 \examples{
-timecourses <- simulate_timecourses(n = 20)
+timecourses <- simulate_timecourses(n = 5)
 
 timecourses \%>\%
- tidyr::unnest(measurements) \%>\%
- tidyr::nest(-model, .key = "measurements")
+  tidyr::unnest(measurements) \%>\%
+  # separate by true model
+  tidyr::nest(-true_model, .key = "measurements") \%>\%
+  # fit all models to each timecourse
+  tidyr::crossing(tibble::tibble(model = c("sigmoid", "impulse"))) \%>\%
+  dplyr::mutate(timecourse_params = purrr::map2(measurements, model, estimate_timecourse_params_tf, n_initializations = 10))
 
 sigmoids <- fit_timecourses_tensorflow(timecourses, model = "sigmoid", n_initializations = 50, use_prior = FALSE)
 impulses <- fit_timecourses_tensorflow(timecourse_subset, model = "impulse", n_initializations = 50, use_prior = FALSE)

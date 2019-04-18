@@ -9,22 +9,19 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
+```{r setup}
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+library(tidyr)
+library(purrr)
+library(impulse)
+theme_set(theme_bw() + theme(text = element_text(size = 15)))
 ```
 
 ```{r simulate_timecourses}
-library(impulse)
-library(dplyr)
-library(ggplot2)
-
 timecourses <- simulate_timecourses(n = 20)
 
 # plot of timecourses + parameters
-
 timecourses %>%
   tidyr::unnest(measurements) %>%
   tidyr::unite(label, true_model, tc_id) %>%
@@ -34,25 +31,69 @@ timecourses %>%
   facet_wrap(~ label)
 ```
 
+## Estimate best fitting sigmoid and impulse model for each timecourse using TensorFlow
 
 ```{r estimate_parameters}
 timecourse_parameters <- timecourses %>%
-  tidyr::unnest(measurements) %>%
+  unnest(measurements) %>%
   # separate by true model
-  tidyr::nest(-true_model, .key = "measurements") %>%
+  nest(-true_model, .key = "measurements") %>%
   # fit all models to each timecourse
-  tidyr::crossing(tibble::tibble(model = c("sigmoid", "impulse"))) %>%
-  dplyr::mutate(timecourse_params = purrr::map2(measurements, model, estimate_timecourse_params_tf, n_initializations = 50),
-                loss = purrr::map(timecourse_params, function(x){x$loss}),
-                parameters = purrr::map(timecourse_params, function(x){x$loss}))
-
+  crossing(tibble(model = c("sigmoid", "impulse"))) %>%
+  mutate(timecourse_list = map2(measurements, model, estimate_timecourse_params_tf, n_initializations = 50)) %>%
+  # reduce each timecourse to best fitting model capturing uncertainty around the best minima
+  mutate(best_timecourse_list = map(timecourse_list, reduce_best_timecourse_params, reduction_type = "loss-min")) %>%
+  unnest(map(best_timecourse_list, ~ as_tibble(map(., list))))
 ```
 
-```{r}
-timecourse_parameters
+```{r parameter_comparison}
+estimated_parameters <- tmp %>%
+  filter(true_model == model) %>%
+  unnest(parameters) %>%
+  select(tc_id, variable, estimated_value = value)
+  
+true_parameters <- timecourses %>%
+  select(-measurements) %>%
+  unnest(params) %>%
+  gather(variable, true_value, -true_model, -tc_id) %>%
+  filter(!is.na(true_value))
+
+true_parameters %>%
+  left_join(estimated_parameters, by = c("tc_id", "variable")) %>%
+  ggplot(aes(x = true_value, y = estimated_value)) +
+  geom_point() +
+  facet_wrap(~ true_model + variable, scale = "free", ncol = 5) +
+  geom_abline(intercept = 0, slope = 1, color = "blue")
 ```
 
+## Model comparison
 
 ```{r compare_models}
+model_comparison <- timecourse_parameters %>%
+  unnest(loss) %>%
+  impulse_sigmoid_comparison(fdr_cutoff = 0.001) 
 
+timecourses %>%
+  select(tc_id, true_model) %>%
+  left_join(model_comparison %>%
+              select(tc_id, is_impulse),
+            by = "tc_id") %>%
+  count(true_model, is_impulse) %>%
+  spread(true_model, n)
+```
+
+## Visualization comparison
+
+```{r}
+fitted_kinetics <- timecourse_parameters %>%
+  unnest(parameters) %>%
+  select(tc_id, model, variable, value) %>%
+  spread(variable, value) %>%
+  nest(-tc_id, .key = "fitted_kinetics")
+
+augmented_timecourses <- timecourses %>%
+  left_join(fitted_kinetics, by =  "tc_id") %>%
+  left_join(model_comparison, by = "tc_id")
+
+kinetics_plotting(augmented_timecourses, saturation = 0.9, max_time, fit_timepoints = 100)
 ```

@@ -1,22 +1,30 @@
 Package: impulse
-Title: What the Package Does (One Line, Title Case)
+Title: Fit Impulse and Sigmoidal Curves to Longitudinal Data Using Tensorflow
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Sean",
            family = "Hackett",
            role = c("aut", "cre"),
            email = "sean@calicolabs.com")
-Description: What the package does (one paragraph).
+Description: This package implements the phenomonological kinetic model of Chechik and Koller using
+Bayesian priors to facilitate interpretability. Two models can be fit: a sigmoidal model parameterized
+by a half-max time constant, an assymptote and a rate constant, as well as an impulse model which adds
+a second sigmoidal response described by a second time constant and assymptote. Priors enforce
+non-negativity of timing and rate coefficients and with appropriate tuning focus support on feasible
+parameter ranges. Tensorflow is used to optimize the maximum posterior estimate (MAP) as a combination
+of a non-linear least squares likelihood and priors on kinetic coefficients.
 License: What license it uses
 Encoding: UTF-8
 LazyData: true
 Imports:
     dplyr,
-    ggplot2,
     tidyr,
-    purrr
+    purrr,
+    ggplot2
 Suggests: 
     knitr,
-    rmarkdown
+    rmarkdown,
+    tensorflow,
+    gridExtra
 VignetteBuilder: knitr
 RoxygenNote: 6.1.1

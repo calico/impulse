@@ -2,14 +2,21 @@
 #'
 #' @param measurements a tibble containing:
 #' \itemize{
-#'   \item{tc_id: a unique indicator for each timecourse"},
-#'   \item{time: a numeric predictor variable},
-#'   \item{abundance: a numeric response variable}
+#'   \item{\code{tc_id}: a unique indicator for each timecourse"},
+#'   \item{\code{time}: a numeric predictor variable},
+#'   \item{\code{abundance}: a numeric response variable}
 #'   }
 #' @param model model to fit:
 #' \itemize{
-#'   \item{sigmoid: one sigmoidal response},
-#'   \item{impulse: two sigmoidal responses}
+#'   \item{\code{sigmoid}: one sigmoidal response},
+#'   \item{\code{impulse}: two sigmoidal responses}
+#'   }
+#'
+#' @return a timecourse list:
+#' \itemize{
+#'   \item{\code{invalid_timecourse_fits}: tibble of parameter initializations for initializations that went to NaN for debugging},
+#'   \item{\code{loss}: tibble of losses for each tc_id and inititalization (init_id)},
+#'   \item{\code{parameters}: tibble of final parameters for each tc_id and initialization (init_id)}
 #'   }
 #'
 #' @examples
@@ -300,69 +307,88 @@ estimate_timecourse_params_tf <- function(measurements, model = "sigmoid", n_ini
     purrr::map(dplyr::bind_rows)
 }
 
-#' Summarize Top Timecourses
+#' Reduce to best timecourse parameters
 #'
 #' Across multiple fits of a timecourse summarize the best fitting timecourse in terms of least-squares error as well as by lowest absolute V within a tolerance of the least-squares set.
 #'
-#' @param combined_timecourses List output from fit_timecourses_tensorflow
+#' @param timecourse_list List output from \code{\link{estimate_timecourse_parameters_tf}}
+#' @param reduction_type How to choose the best parameter set, options are:
+#' \itemize{
+#'  \item{\code{loss-min}: lowest loss function},
+#'  \item{\code{loss-small-v-small}: loss within \code{sufficiency_tolerance} of minimum loss and then minimize absolute sum of \eqn{v_{inter}} and \eqn{v_{final}} (useful primarily when not using priors).}
+#' }
 #' @param sufficiency_tolerance All timecourses within 1 + sufficiency_tolerance best fitting parameter set are deemed sufficient
 #'
-#' @return a list containing top timecourses, parameter set and losses
+#' @return a list containing top parameter set and losses
 #'
 #' @export
-summarize_top_timecourses <- function(combined_timecourses, sufficiency_tolerance = 0.05) {
+reduce_best_timecourse_params <- function(timecourse_list, reduction_type = "loss-min", sufficiency_tolerance = 0.05) {
 
-  good_inits <- combined_timecourses$loss %>%
-    dplyr::group_by(tc_id, model) %>%
+  stopifnot(class(timecourse_list) == "list")
+  stopifnot(names(timecourse_list) == c("invalid_timecourse_fits", "parameters", "loss"))
+  if ("model" %in% colnames(timecourse_list$loss) || "model" %in% timecourse_list$parameters) {
+    stop ("\"model\" cannot be included in tables of timecourse list")
+  }
+
+  stopifnot(class(sufficiency_tolerance) %in% c("numeric", "integer"), length(sufficiency_tolerance) == 1, sufficiency_tolerance >= 0)
+
+  stopifnot(class(reduction_type) == "character", length(reduction_type) == 1)
+  valid_reduction_types <- c("loss-min", "loss-small-v-small")
+  if (!(reduction_type %in% valid_reduction_types)) {
+    stop (reduction_type, " is an invalid \"reduction_type\", valid types are: ", paste(valid_reduction_types, collapse = ", "))
+  }
+
+  good_inits <- timecourse_list$loss %>%
+    dplyr::group_by(tc_id) %>%
     dplyr::arrange(loss) %>%
     dplyr::mutate(n_near_min = sum(loss - min(loss) < sufficiency_tolerance),
                   all_valid = n())
 
-  # lowest least squares parameter set
-  top_inits <- good_inits %>%
-    dplyr::slice(1) %>%
-    dplyr::mutate(top_hit_type = "lowest loss")
-
   good_init_parameters <- good_inits %>%
-    # select all parameter sets which explain less than 1.05x from the "best" fitting parameter set
+    # select all parameter sets within 0.05 of "best" fitting parameter set
     dplyr::filter(loss - min(loss) < sufficiency_tolerance) %>%
     # add all parameter sets within ss tolerance
-    dplyr::left_join(combined_timecourses$parameters, by = c("tc_id", "model", "init_id"))
+    dplyr::left_join(timecourse_list$parameters, by = c("tc_id", "init_id"))
 
   # range of parameter values for "good parameter sets"
   parameter_range <- good_init_parameters %>%
-    dplyr::group_by(tc_id, model, variable) %>%
-    dplyr::summarize(min_value = min(value), max_value = max(value))
+    dplyr::group_by(tc_id, variable) %>%
+    dplyr::summarize(min_value = min(value), max_value = max(value)) %>%
+    dplyr::ungroup()
 
-  # min absolute sum of fluxes within a tolerance of best fit
-  parameter_set_v_abs_sum <- good_init_parameters %>%
-    dplyr::group_by(tc_id, model, init_id) %>%
-    dplyr::summarize(v_abs_sum = sum(abs(value[variable %in% c("v_inter", "v_final")])))
+  if (reduction_type == "loss-min") {
 
-  parameter_set_v_abs_sum <- parameter_set_v_abs_sum %>%
-    dplyr::group_by(tc_id, model) %>%
-    dplyr::arrange(v_abs_sum) %>%
-    dplyr::slice(1)
+    # lowest loss
+    best_inits <- good_inits %>%
+      dplyr::slice(1) %>%
+      dplyr::ungroup()
 
-  lowv_inits <- good_inits %>%
-    dplyr::semi_join(parameter_set_v_abs_sum, by = c("tc_id", "model", "init_id")) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(top_hit_type = "low loss, low absolute v")
+  } else if (reduction_type == "loss-small-v-small") {
 
-  init_summaries <- top_inits %>%
-    dplyr::bind_rows(lowv_inits)
+    # min absolute sum of v within a tolerance of best fit
+    parameter_set_v_abs_sum <- good_init_parameters %>%
+      dplyr::group_by(tc_id, init_id) %>%
+      dplyr::summarize(v_abs_sum = sum(abs(value[variable %in% c("v_inter", "v_final")])))
+
+    parameter_set_v_abs_sum <- parameter_set_v_abs_sum %>%
+      dplyr::group_by(tc_id) %>%
+      dplyr::arrange(v_abs_sum) %>%
+      dplyr::slice(1)
+
+    best_inits <- good_inits %>%
+      dplyr::inner_join(parameter_set_v_abs_sum, by = c("tc_id", "init_id")) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(top_hit_type = "low loss, low absolute v")
+
+  } else {
+    stop ("\"", reduction_type, "\" logic not defined")
+  }
 
   top_timecourse_fits <- list()
-  top_timecourse_fits$timecourse <- combined_timecourses$timecourse %>%
-    dplyr::inner_join(init_summaries %>%
-                        dplyr::select(tc_id, model, init_id, top_hit_type),
-                      by = c("tc_id", "model", "init_id"))
-  top_timecourse_fits$parameters <- combined_timecourses$parameters %>%
-    dplyr::inner_join(init_summaries %>%
-                        dplyr::select(tc_id, model, init_id, top_hit_type),
-                      by = c("tc_id", "model", "init_id")) %>%
-    dplyr::left_join(parameter_range, by = c("tc_id", "model", "variable"))
-  top_timecourse_fits$loss <- init_summaries
+  top_timecourse_fits$parameters <- timecourse_list$parameters %>%
+    dplyr::semi_join(best_inits, by = c("tc_id", "init_id")) %>%
+    dplyr::left_join(parameter_range, by = c("tc_id", "variable"))
+  top_timecourse_fits$loss <- best_inits
 
   top_timecourse_fits
 }

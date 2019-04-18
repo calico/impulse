@@ -12,6 +12,14 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+```{r setup}
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+library(gridExtra)
+library(impulse)
+theme_set(theme_bw() + theme(text = element_text(size = 15)))
+```
+
 # Generating interpretable timecourse parameters
 
 The impulse equations of Chechik and Koller 2009 are able to approximate many biological timecourses. One of the limitations of this equation though is that without proper constraints the impulse equation can fit a timecourse in a non-canonical fashion which limits interpretability. To enforce that the impulse equation is fit canonically priors can be used to penalize (or outright exclude) regions of parameter space.
@@ -21,11 +29,6 @@ This vignette is constructed to demonstrate these pathologies and suggest approa
 ## Impulse versus sigmoids
 
 ```{r}
-suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(ggplot2))
-library(impulse)
-theme_set(theme_bw() + theme(text = element_text(size = 15)))
-
 sigmoid_impulse_plot <- function(timecourse_parameters) {
   
   fit_timecourse(timecourse_parameters, model = "sigmoid", fit.label = "sigmoid") %>%
@@ -77,7 +80,7 @@ list(sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 0.1, v_inter = 3, v_fin
        ggtitle("rate = 1"),
      sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 3, v_inter = 3, v_final = -3, t_fall = 45)) +
        ggtitle("rate = 0.3")) %>%
-  {do.call(gridExtra::grid.arrange, .)}
+  {do.call(grid.arrange, .)}
 ```
 
 $\beta$ should generally be between 0.1 - 1 - a fair mean would be 0.5. Fixing this the mean of $\beta \sim \Gamma$ at 0.5, we can evaluate Gamma distributions with this mean. Since the mean of a Gamma distributed random variable will be shape * scale, we can fix shape * scale at 0.5, and then vary the ratio of shape:scale to explore possible Gammas.
@@ -114,7 +117,7 @@ list(sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 0.06, v_inter = 3, v_fi
        ggtitle("50% rate quantile"),
      sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 1.19, v_inter = 3, v_final = -3, t_fall = 45)) +
        ggtitle("97.5% rate quantile")) %>%
-       {do.call(gridExtra::grid.arrange, .)}
+       {do.call(grid.arrange, .)}
 ```
 
 ## Constraining t_rise / t_fall
@@ -135,7 +138,7 @@ list(sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 0.5, v_inter = 3, v_fin
        ggtitle(expression(t[rise] ~ "= 45," ~ t[fall] ~ "= 45 pathology")),
      sigmoid_impulse_plot(data_frame(t_rise = 45, rate = 0.5, v_inter = 3, v_final = -3, t_fall = 45)) +
        ggtitle(expression(t[rise] ~ "= 45" ~ t[fall] ~ "= 45 pathology"))) %>%
-       {do.call(gridExtra::grid.arrange, .)}
+       {do.call(grid.arrange, .)}
 ```
 
 ## Applying priors on timing coefficients
@@ -160,5 +163,5 @@ list(sigmoid_impulse_plot(data_frame(t_rise = gamma_quantiles[1], rate = 0.5, v_
        ggtitle("50% t quantile"),
      sigmoid_impulse_plot(data_frame(t_rise = gamma_quantiles[4], rate = 0.5, v_inter = 3, v_final = -3, t_fall = gamma_quantiles[4]*2)) +
        ggtitle("75% t quantile")) %>%
-       {do.call(gridExtra::grid.arrange, .)}
+       {do.call(grid.arrange, .)}
 ```
