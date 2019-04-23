@@ -1,3 +1,6 @@
+#' Impulse Sigmoid Comparison
+#'
+#' @export
 impulse_sigmoid_comparison <- function(timecourse_losses, fdr_cutoff = 0.001) {
 
   stopifnot("data.frame" %in% class(timecourse_losses))

@@ -1,3 +1,6 @@
+#' Kinetics plotting
+#'
+#' @export
 kinetics_plotting <- function(augmented_timecourses, saturation = 0.9, max_time, fit_timepoints = 100) {
 
   stopifnot("tbl_df" %in% class(augmented_timecourses))

@@ -47,7 +47,7 @@ timecourse_parameters <- timecourses %>%
 ```
 
 ```{r parameter_comparison}
-estimated_parameters <- tmp %>%
+estimated_parameters <- timecourse_parameters %>%
   filter(true_model == model) %>%
   unnest(parameters) %>%
   select(tc_id, variable, estimated_value = value)

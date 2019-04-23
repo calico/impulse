@@ -2,7 +2,8 @@
 
 export(estimate_timecourse_params_tf)
 export(fit_timecourse)
-export(gene_tf_fits)
+export(impulse_sigmoid_comparison)
+export(kinetics_plotting)
 export(reduce_best_timecourse_params)
 export(simulate_parameters)
 export(simulate_timecourses)

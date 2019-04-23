@@ -15,9 +15,10 @@ vignette: >
 ```{r setup}
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(ggplot2))
-library(gridExtra)
-library(impulse)
+suppressPackageStartupMessages(library(gridExtra))
 theme_set(theme_bw() + theme(text = element_text(size = 15)))
+
+library(impulse)
 ```
 
 # Generating interpretable timecourse parameters
