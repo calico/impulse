@@ -1,5 +1,9 @@
 ---
 output: github_document
+markdown: kramdown
+
+kramdown:
+  input: GFM
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -25,7 +29,11 @@ The core functionality of this package is:
 
 ## The model
 
-```{r echo = FALSE, message = FALSE, warning = FALSE}
+This package revolves around two phenomonological models, the sigmoid (single response) and impulse (double sigmoid). The plot below highlights the value of these models. It is easy to mentally convert between timecourses and kinetic paramters, but the kinetic parameters are generally more meaningful since they indicate the timing and magnitdue of responses.
+
+A sigmoid with parameters {t_rise = 25, v_inter = 3, rate = 0.25} and an impulse with two additional parameters {t_fall = 45, v_final = -3} are shown. The t_rise of 25 indicates a half-max time of 25 and v_inter of 3 indicates saturation at 3. In the impulse model there is a second response with a half-max time of 45 and final assymptote at -3.
+
+```{r sigmoid_impulse_compare, echo = FALSE, message = FALSE, warning = FALSE}
 library(dplyr)
 library(ggplot2)
 library(impulse)
@@ -36,32 +44,35 @@ sigmoid_impulse_plot <- function(timecourse_parameters) {
     dplyr::left_join(fit_timecourse(timecourse_parameters, model = "impulse", fit.label = "impulse"), by = "time") %>%
     tidyr::gather(eqtn, level, -time) %>%
     ggplot(aes(x = time, y = level, color = eqtn)) +
-    geom_path(size = 2)
-  
+    geom_path(size = 2) +
+    scale_color_brewer("Model", palette = "Set2", breaks = c("sigmoid", "impulse")) +
+    scale_y_continuous("Response", breaks = seq(-3, 3)) +
+    scale_x_continuous("Time") +
+    theme_bw() +
+    theme(text = element_text(size = 15), legend.position = "top")
+   
 }
 
 sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 0.25, v_inter = 3, v_final = -3, t_fall = 45))
 ```
 
-**sigmoid:**
-$$
-v_{inter}*\frac{1}{1 + \exp(-\beta(t - t_{rise}))}
-$$
+### sigmoid
 
-**implulse:**
-$$
-\frac{1}{1 + \exp(-\beta(t - t_{rise}))} * (v_{final} + (v_{inter} - v_{final}))\frac{1}{1 + \exp(\beta(t - t_{fall}))}
-$$
+![Sigmoid](https://github.com/calico/impulse/blob/master/man/figures/sigmoid.png)
 
-## Impulse functionality
+### implulse
+
+![Impulse](https://github.com/calico/impulse/blob/master/man/figures/impulse.png)
+
+## *Impulse* functionality
 
 ### Fitting Data
 
-The primary functionality in this package is fitting parametric models to user-supplied timecourses. The vignette: fitting-timecourses.Rmd simulates time series, fits parameters to the models and carries out model comparison.
+The primary functionality in this package is fitting parametric models to user-supplied timecourses. The vignette *fitting-timecourses* simulates time series, fits multiple models to each timecourse and then determines the model that best fits each timecourse.
 
 ### Formulating priors
 
-The most important contribution of this work is aaplying priors to impulse models since there are natural constraints on parameter values which should hold (non-negative rates, non-negative times, rise before fall). When these constraints are violated, a good fit may occur, but interpretability of timing and effect sizes will be lost. The vignette: setting_priors.Rmd describes how to formulate the priors and can be used to guide the tuning of parameters for other application.
+The most important contribution of this work is aaplying priors to impulse models since there are natural constraints on parameter values which should hold (non-negative rates, non-negative times, rise before fall). When these constraints are violated, a good fit may occur, but interpretability of timing and effect sizes will be lost. The vignette *setting_priors* describes how to formulate the priors and can be used to guide the tuning of parameters for other application.
 
 ## Installation
 

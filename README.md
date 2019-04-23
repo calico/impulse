@@ -23,24 +23,37 @@ The core functionality of this package is:
 
 ## The model
 
-![](man/figures/README-unnamed-chunk-2-1.png)<!-- -->
+This package revolves around two phenomonological models, the sigmoid
+(single response) and impulse (double sigmoid). The plot below
+highlights the value of these models. It is easy to mentally convert
+between timecourses and kinetic paramters, but the kinetic parameters
+are generally more meaningful since they indicate the timing and
+magnitdue of responses.
 
-**sigmoid:** \[
-v_{inter}*\frac{1}{1 + \exp(-\beta(t - t_{rise}))}
-\]
+A sigmoid with parameters {t\_rise = 25, v\_inter = 3, rate = 0.25} and
+an impulse with two additional parameters {t\_fall = 45, v\_final = -3}
+are shown. The t\_rise of 25 indicates a half-max time of 25 and
+v\_inter of 3 indicates saturation at 3. In the impulse model there is a
+second response with a half-max time of 45 and final assymptote at -3.
 
-**implulse:** \[
-\frac{1}{1 + \exp(-\beta(t - t_{rise}))} * (v_{final} + (v_{inter} - v_{final}))\frac{1}{1 + \exp(\beta(t - t_{fall}))}
-\]
+![](man/figures/README-sigmoid_impulse_compare-1.png)<!-- -->
 
-## Impulse functionality
+### sigmoid
+
+![Sigmoid](https://github.com/calico/impulse/blob/master/man/figures/sigmoid.png)
+
+### implulse
+
+![Impulse](https://github.com/calico/impulse/blob/master/man/figures/impulse.png)
+
+## *Impulse* functionality
 
 ### Fitting Data
 
 The primary functionality in this package is fitting parametric models
-to user-supplied timecourses. The vignette: fitting-timecourses.Rmd
-simulates time series, fits parameters to the models and carries out
-model comparison.
+to user-supplied timecourses. The vignette *fitting-timecourses*
+simulates time series, fits multiple models to each timecourse and then
+determines the model that best fits each timecourse.
 
 ### Formulating priors
 
@@ -48,9 +61,9 @@ The most important contribution of this work is aaplying priors to
 impulse models since there are natural constraints on parameter values
 which should hold (non-negative rates, non-negative times, rise before
 fall). When these constraints are violated, a good fit may occur, but
-interpretability of timing and effect sizes will be lost. The vignette:
-setting\_priors.Rmd describes how to formulate the priors and can be
-used to guide the tuning of parameters for other application.
+interpretability of timing and effect sizes will be lost. The vignette
+*setting\_priors* describes how to formulate the priors and can be used
+to guide the tuning of parameters for other application.
 
 ## Installation
 
