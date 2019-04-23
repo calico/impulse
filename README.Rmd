@@ -20,14 +20,14 @@ knitr::opts_chunk$set(
 
 This package implements the [Chechik & Koller](https://www.ncbi.nlm.nih.gov/pubmed/19193146) impulse model using TensorFlow to improve scaleability and allow for the introduction of priors which improve model interpretability. This model describes timeseries data using two sigmoidal responses which are sufficient to capture the dynamics of many biological systems. While this model was formulated to capture biological dynamics, the model is generally suitable for any kind of saturation behavior described by half-max value(s) and assymptote(s).
 
-The core functionality of this package is:
+The core functionality of **impulse** is:
 
 - simulate timecourse parameters and resulting timecourses
 - fit sigmoid and impulse models to timecourses with or without priors on kinetic parameters
 - compare sigmoid and impulse models
 - visualize measurements and parametric fits
 
-## The model
+## The models
 
 This package revolves around two phenomonological models, the sigmoid (single response) and impulse (double sigmoid). The plot below highlights the value of these models. It is easy to mentally convert between timecourses and kinetic paramters, but the kinetic parameters are generally more meaningful since they indicate the timing and magnitdue of responses.
 

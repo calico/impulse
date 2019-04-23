@@ -13,7 +13,7 @@ formulated to capture biological dynamics, the model is generally
 suitable for any kind of saturation behavior described by half-max
 value(s) and assymptote(s).
 
-The core functionality of this package is:
+The core functionality of **impulse** is:
 
   - simulate timecourse parameters and resulting timecourses
   - fit sigmoid and impulse models to timecourses with or without priors
@@ -21,7 +21,7 @@ The core functionality of this package is:
   - compare sigmoid and impulse models
   - visualize measurements and parametric fits
 
-## The model
+## The models
 
 This package revolves around two phenomonological models, the sigmoid
 (single response) and impulse (double sigmoid). The plot below
