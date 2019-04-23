@@ -14,11 +14,21 @@ suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(ggplot2))
 library(tidyr)
 library(purrr)
-library(impulse)
 theme_set(theme_bw() + theme(text = element_text(size = 15)))
+
+library(impulse)
 ```
 
+## Overview
+
+This vignette applies much of the functionality included in the **impulse** package to estimate meaningful parameters of timecourses, compare different kinetic models and visualize results. In order to have some data to work with we will begin by simulating kinetic parameters from sigmoid and impulse models and then generate timecourse data derived from these models. In practice, we wouldn't know these parameters but would instead want to estimate them from observed data. Most of the vignette focuses on how we can estimate these parameters and summarize a best fit model for each timecourse. Since we know the parameters that were used to construct each timecourse, we can also see how accurately we can recover these values,
+
+## Simulate timecourses
+
+To have data to work with, 20 timecourses are randomly generated which include a mixture of sigmoid (single response) and impulse (double sigmoid) curves with associated timing, assymptote and rate (steepness) parameters.
+
 ```{r simulate_timecourses}
+set.seed(1234)
 timecourses <- simulate_timecourses(n = 20)
 
 # plot of timecourses + parameters
@@ -31,7 +41,11 @@ timecourses %>%
   facet_wrap(~ label)
 ```
 
+Visualizing these timecourses, sigmoidal fits will always have one and only one response, while impulses allow for up to two transitions (some impulses will look rather sigmoidal due to limitations of the generative process).
+
 ## Estimate best fitting sigmoid and impulse model for each timecourse using TensorFlow
+
+We want to evaluate how well each timecourse fits each model (sigmoid and impulse) and for each model what is the parameterization that results in least-squares fit of a response as a function of kinetic parameters to an observed time series. This model can be fit using non-linear least squares and this problem is implemented in TensorFlow to simplify gradient updates and allow multiple initializations to be updated in a single gradient update: *estimate_timecourse_params_tf*. Using TensorFlow also allows us to not just optimize for a least-squares solution, but we can also constrain parameters to feasible/probable regimes by using prior parameters and find the *maximum a posteriori* (MAP) estimate. The motivation for using priors and how their values can be chosen is discussed in the *setting-priors* vignette.
 
 ```{r estimate_parameters}
 timecourse_parameters <- timecourses %>%
@@ -45,6 +59,8 @@ timecourse_parameters <- timecourses %>%
   mutate(best_timecourse_list = map(timecourse_list, reduce_best_timecourse_params, reduction_type = "loss-min")) %>%
   unnest(map(best_timecourse_list, ~ as_tibble(map(., list))))
 ```
+
+As a quick sanity check, we can compare each timecourse's estimated parameters to the "true" parameters used to generate the data when the true model is the same as the fitted model (i.e., a sigmoid fit to a true sigmoid).
 
 ```{r parameter_comparison}
 estimated_parameters <- timecourse_parameters %>%
@@ -66,7 +82,11 @@ true_parameters %>%
   geom_abline(intercept = 0, slope = 1, color = "blue")
 ```
 
+Here, we can see that timing coefficients and assymptotes are very well estimated for sigmoidal models and generally well estimated for impulses. The occational impulse which looks very sigmoidal will have unreliable coefficients since it will *de facto* be a sigmoid. Rate coefficients are difficult to estimate because subtle differences in noise can result in large differences in estimated rate.
+
 ## Model comparison
+
+In a given dataset we will have some timecourses which fit a sigmoidal models and others that can only be fit with an impulse. To determine which model best fits each timecourse, we first fit the sigmoid and impulse model to every timecourse and then compare the models using **impulse_sigmoid_comparison** to determine whether the improvement in fit of the impulse model relative to the sigmoid is justified by the two additional parameters of the impulse model. 
 
 ```{r compare_models}
 model_comparison <- timecourse_parameters %>%
@@ -76,13 +96,15 @@ model_comparison <- timecourse_parameters %>%
 timecourses %>%
   select(tc_id, true_model) %>%
   left_join(model_comparison %>%
-              select(tc_id, is_impulse),
+              select(tc_id, best_model),
             by = "tc_id") %>%
-  count(true_model, is_impulse) %>%
-  spread(true_model, n)
+  count(true_model, best_model) %>%
+  spread(true_model, n, fill = 0)
 ```
 
 ## Visualization comparison
+
+Finally, we can combine our observed timecourses with fitted estimates based on kinetic parameters using **kinetics_plotting**.
 
 ```{r}
 fitted_kinetics <- timecourse_parameters %>%
@@ -95,5 +117,5 @@ augmented_timecourses <- timecourses %>%
   left_join(fitted_kinetics, by =  "tc_id") %>%
   left_join(model_comparison, by = "tc_id")
 
-kinetics_plotting(augmented_timecourses, saturation = 0.9, max_time, fit_timepoints = 100)
+kinetics_plotting(augmented_timecourses, saturation = 0.9, max_time = 150, fit_timepoints = 100)
 ```
