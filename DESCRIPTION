@@ -1,6 +1,6 @@
 Package: impulse
 Title: Fit Impulse and Sigmoidal Curves to Longitudinal Data Using Tensorflow
-Version: 0.0.0.9000
+Version: 1.0.0.0
 Authors@R: 
     person(given = "Sean",
            family = "Hackett",
@@ -13,7 +13,7 @@ Description: This package implements the phenomonological kinetic model of Chech
   non-negativity of timing and rate coefficients and with appropriate tuning, focus support on feasible
   parameter ranges. Tensorflow is used to optimize the maximum posterior estimate (MAP) as a combination
   of a non-linear least squares likelihood and priors on kinetic coefficients.
-License: What license it uses
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports:

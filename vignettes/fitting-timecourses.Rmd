@@ -27,7 +27,7 @@ This vignette applies much of the functionality included in the **impulse** pack
 
 To have data to work with, 20 timecourses are randomly generated which include a mixture of sigmoid (single response) and impulse (double sigmoid) curves with associated timing, assymptote and rate (steepness) parameters.
 
-```{r simulate_timecourses}
+```{r simulate_timecourses, fig.height = 10, fig.width = 10}
 set.seed(1234)
 timecourses <- simulate_timecourses(n = 20)
 
@@ -62,7 +62,7 @@ timecourse_parameters <- timecourses %>%
 
 As a quick sanity check, we can compare each timecourse's estimated parameters to the "true" parameters used to generate the data when the true model is the same as the fitted model (i.e., a sigmoid fit to a true sigmoid).
 
-```{r parameter_comparison}
+```{r parameter_comparison, fig.height = 5, fig.width = 8}
 estimated_parameters <- timecourse_parameters %>%
   filter(true_model == model) %>%
   unnest(parameters) %>%
@@ -106,7 +106,7 @@ timecourses %>%
 
 Finally, we can combine our observed timecourses with fitted estimates based on kinetic parameters using **kinetics_plotting**.
 
-```{r}
+```{r timecourse_vis, fig.height = 10, fig.width = 10}
 fitted_kinetics <- timecourse_parameters %>%
   unnest(parameters) %>%
   select(tc_id, model, variable, value) %>%
