@@ -80,4 +80,7 @@ The package is under active development though and the latest set of features ca
 
 ```{r, eval=FALSE}
 devtools::install_github('calico/impulse')
+
+# for vignettes
+devtools::install_github('calico/impulse', build = TRUE, build_opts = c("--no-resave-data", "--no-manual"))
 ```

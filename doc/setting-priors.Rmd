@@ -12,7 +12,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, warning = FALSE}
+```{r setup}
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(gridExtra))

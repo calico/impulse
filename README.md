@@ -73,4 +73,7 @@ features can be obtained by installing from this repository using
 
 ``` r
 devtools::install_github('calico/impulse')
+
+# for vignettes
+devtools::install_github('calico/impulse', build = TRUE, build_opts = c("--no-resave-data", "--no-manual"))
 ```

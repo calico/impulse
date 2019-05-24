@@ -1,35 +1,12 @@
----
-title: "Setting impulse priors"
-author: "Sean R. Hackett"
-date: "`r Sys.Date()`"
-output:
-  rmarkdown::html_vignette:
-    fig_width: 6
-    fig_height: 6
-vignette: >
-  %\VignetteIndexEntry{Vignette Title}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
-```{r setup, warning = FALSE}
+## ----setup---------------------------------------------------------------
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(gridExtra))
 theme_set(theme_bw() + theme(text = element_text(size = 15)))
 
 library(impulse)
-```
 
-# Generating interpretable timecourse parameters
-
-The impulse equations of Chechik and Koller 2009 are able to approximate many biological timecourses. One of the limitations of this equation though is that without proper constraints the impulse equation can fit a timecourse in a non-canonical fashion which limits interpretability. To enforce that the impulse equation is fit canonically priors can be used to penalize (or outright exclude) regions of parameter space.
-
-This vignette is constructed to demonstrate these pathologies and suggest approaches for selecting prior parameters for sigmoids/impulses.
-
-## Impulse versus sigmoids
-
-```{r}
+## ------------------------------------------------------------------------
 sigmoid_impulse_plot <- function(timecourse_parameters) {
   
   fit_timecourse(timecourse_parameters, model = "sigmoid", fit.label = "sigmoid") %>%
@@ -40,39 +17,12 @@ sigmoid_impulse_plot <- function(timecourse_parameters) {
   
   }
 sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 0.25, v_inter = 3, v_final = -3, t_fall = 45))
-```
 
-**sigmoid:**
-$$
-v_{inter}*\frac{1}{1 + \exp(-\beta(t - t_{rise}))}
-$$
-
-**implulse:**
-$$
-\frac{1}{1 + \exp(-\beta(t - t_{rise}))} * (v_{final} + (v_{inter} - v_{final}))\frac{1}{1 + \exp(\beta(t - t_{fall}))}
-$$
-
-## Constraining Vs with a Normal prior
-
-mean = 0
-sd = sd(X)
-
-## Constraining rate
-
-Without constraints, there is a loss of interpretability. For example, rate should be strictly non-negative.
-
-```{r}
+## ------------------------------------------------------------------------
 sigmoid_impulse_plot(data_frame(t_rise = 25, rate = -0.25, v_inter = 3, v_final = -3, t_fall = 45)) +
   ggtitle("Negative rate pathology")
-```
 
-### Using a Gamma prior
-
-To enforce non-negativity and constrain rates to feasible rates of change.
-
-#### Example when varying rate
-
-```{r fig.height = 8, fig.width = 8}
+## ----fig.height = 8, fig.width = 8---------------------------------------
 list(sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 0.1, v_inter = 3, v_final = -3, t_fall = 45)) +
        ggtitle("rate = 0.1"),
      sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 0.5, v_inter = 3, v_final = -3, t_fall = 45)) +
@@ -82,13 +32,8 @@ list(sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 0.1, v_inter = 3, v_fin
      sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 3, v_inter = 3, v_final = -3, t_fall = 45)) +
        ggtitle("rate = 0.3")) %>%
   {do.call(grid.arrange, .)}
-```
 
-$\beta$ should generally be between 0.1 - 1 - a fair mean would be 0.5. Fixing this the mean of $\beta \sim \Gamma$ at 0.5, we can evaluate Gamma distributions with this mean. Since the mean of a Gamma distributed random variable will be shape * scale, we can fix shape * scale at 0.5, and then vary the ratio of shape:scale to explore possible Gammas.
-
-#### Fixing average rate evaluating values of shape and scale
-
-```{r fig.height = 10, fig.width = 10}
+## ----fig.height = 10, fig.width = 10-------------------------------------
 betas <- seq(0, 2, by = 0.01)
 shape_scale_prod <- 0.5
 shape_scale_ratio <- 10^(seq(0, 2, length.out = 20))
@@ -105,11 +50,8 @@ ggplot(gamma_densities, aes(x = beta, y = density)) +
   facet_wrap(~ shape_scale) +
   geom_path() +
   ggtitle("shape & scale, where shape * scale = 0.5")
-```
 
-I like shape = 2, scale = 0.25.
-
-```{r fig.height = 10, fig.width = 6}
+## ----fig.height = 10, fig.width = 6--------------------------------------
 
 gamma_quantiles <- qgamma(c(0.025, 0.5, 0.95), shape = 2, scale = 0.25)
 list(sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 0.06, v_inter = 3, v_final = -3, t_fall = 45)) +
@@ -119,20 +61,12 @@ list(sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 0.06, v_inter = 3, v_fi
      sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 1.19, v_inter = 3, v_final = -3, t_fall = 45)) +
        ggtitle("97.5% rate quantile")) %>%
        {do.call(grid.arrange, .)}
-```
 
-## Constraining t_rise / t_fall
-
-t_rise and t_fall should both be greater than 0 since we are enforcing that in the pre-induction steady state v_init = 0 (and it is removed from the sigmoid/impulse equations). We want to enforce that these coefficients are non-negative without putting a zero probability prior on these values (since this would prevent calculation of a gradient during optimization).
-
-```{r}
+## ------------------------------------------------------------------------
 sigmoid_impulse_plot(data_frame(t_rise = -25, rate = 0.25, v_inter = 3, v_final = -3, t_fall = 90)) +
   ggtitle(expression(t[rise] < 0 ~ " pathology"))
-```
 
-A similar constraint is also applied to t_fall - t_rise. Since t_fall should be later than t_rise by definition. 
-
-```{r}
+## ------------------------------------------------------------------------
 list(sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 0.5, v_inter = 3, v_final = -3, t_fall = 45)) +
        ggtitle(expression(t[rise] ~ "= 25," ~ t[fall] ~ "= 45")),
      sigmoid_impulse_plot(data_frame(t_rise = 45, rate = 0.5, v_inter = 3, v_final = -3, t_fall = 25)) +
@@ -140,21 +74,12 @@ list(sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 0.5, v_inter = 3, v_fin
      sigmoid_impulse_plot(data_frame(t_rise = 45, rate = 0.5, v_inter = 3, v_final = -3, t_fall = 45)) +
        ggtitle(expression(t[rise] ~ "= 45" ~ t[fall] ~ "= 45 pathology"))) %>%
        {do.call(grid.arrange, .)}
-```
 
-## Applying priors on timing coefficients
-
-- Sample from and enforce a non-negative prior on t_rise.
-- Sample from and enforce a non-negative prior on t_fall - t_rise (rather than on t_fall directly).
-
-This prior should only be weakly informative over the positive support but exclude negative values.
-
-```{r}
+## ------------------------------------------------------------------------
 qplot(y = dgamma(seq(0, 200, by = 0.1), shape = 2, scale = 25), x = seq(0, 200, by = 0.1)) +
   scale_x_continuous("time") + scale_y_continuous(expression("Pr(t |" ~ Gamma ~ ")"))
-```
 
-```{r fig.height = 10, fig.width = 10}
+## ----fig.height = 10, fig.width = 10-------------------------------------
 gamma_quantiles <- qgamma(c(0.025, 0.25, 0.5, 0.75, 0.95), shape = 2, scale = 25)
 list(sigmoid_impulse_plot(data_frame(t_rise = gamma_quantiles[1], rate = 0.5, v_inter = 3, v_final = -3, t_fall = gamma_quantiles[1]*2)) +
        ggtitle("2.5% t quantile"),
@@ -165,4 +90,4 @@ list(sigmoid_impulse_plot(data_frame(t_rise = gamma_quantiles[1], rate = 0.5, v_
      sigmoid_impulse_plot(data_frame(t_rise = gamma_quantiles[4], rate = 0.5, v_inter = 3, v_final = -3, t_fall = gamma_quantiles[4]*2)) +
        ggtitle("75% t quantile")) %>%
        {do.call(grid.arrange, .)}
-```
+
