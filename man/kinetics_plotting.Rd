@@ -7,6 +7,18 @@
 kinetics_plotting(augmented_timecourses, saturation = 0.9, max_time,
   fit_timepoints = 100)
 }
+\arguments{
+\item{augmented_timecourses}{Tibble with one row per timecourse and containing measurements &/or fitted kinetics to plot.}
+
+\item{saturation}{Degree of saturation to use for shading sigmoidal curves.}
+
+\item{max_time}{Maximum time to display}
+
+\item{fit_timepoints}{Number of timepoints to use for generating fitted timecourses.}
+}
+\value{
+a ggplot
+}
 \description{
 Kinetics plotting
 }

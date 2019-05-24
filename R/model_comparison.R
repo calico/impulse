@@ -1,5 +1,8 @@
 #' Impulse Sigmoid Comparison
 #'
+#' @param timecourse_losses table containing tc_id, model and logLik
+#' @param fdr_cutoff cutoff for accepting an impulse over a sigmoid fit
+#'
 #' @export
 impulse_sigmoid_comparison <- function(timecourse_losses, fdr_cutoff = 0.001) {
 

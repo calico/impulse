@@ -13,6 +13,8 @@ fit_timecourse(timecourse_parameters, timepts = seq(0, 90, by = 1),
 \item{timepts}{a numeric vector of timepoints to fit}
 
 \item{model}{sigmoid or impulse}
+
+\item{fit.label}{fitted values variable name}
 }
 \description{
 Fit the parameters of a sigmoid or impulse model to a set of time points.

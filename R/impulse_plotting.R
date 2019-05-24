@@ -1,5 +1,12 @@
 #' Kinetics plotting
 #'
+#' @param augmented_timecourses Tibble with one row per timecourse and containing measurements &/or fitted kinetics to plot.
+#' @param saturation Degree of saturation to use for shading sigmoidal curves.
+#' @param max_time Maximum time to display
+#' @param fit_timepoints Number of timepoints to use for generating fitted timecourses.
+#'
+#' @return a ggplot
+#'
 #' @export
 kinetics_plotting <- function(augmented_timecourses, saturation = 0.9, max_time, fit_timepoints = 100) {
 

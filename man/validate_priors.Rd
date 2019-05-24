@@ -4,21 +4,13 @@
 \alias{validate_priors}
 \title{Validate Parameters}
 \usage{
-validate_priors(model, prior_pars)
-
-validate_priors(model, prior_pars)
+validate_priors(model, parameters)
 }
 \arguments{
 \item{model}{name of model to simulate}
 
 \item{prior_pars}{prior parameters for model}
-
-\item{model}{name of model to simulate}
-
-\item{prior_pars}{prior parameters for model}
 }
 \description{
-Check that all required prior parameters are provided and have valid values
-
 Check that all required prior parameters are provided and have valid values
 }

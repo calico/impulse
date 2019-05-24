@@ -6,6 +6,11 @@
 \usage{
 impulse_sigmoid_comparison(timecourse_losses, fdr_cutoff = 0.001)
 }
+\arguments{
+\item{timecourse_losses}{table containing tc_id, model and logLik}
+
+\item{fdr_cutoff}{cutoff for accepting an impulse over a sigmoid fit}
+}
 \description{
 Impulse Sigmoid Comparison
 }

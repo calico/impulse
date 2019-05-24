@@ -22,6 +22,21 @@ estimate_timecourse_params_tf(measurements, model = "sigmoid",
   \item{\code{sigmoid}: one sigmoidal response},
   \item{\code{impulse}: two sigmoidal responses}
   }}
+
+\item{n_initializations}{Number of initializations to use for each timecourse.}
+
+\item{use_prior}{If FALSE, fit least squares. If TRUE, add priors for a MAP estimate.}
+
+\item{prior_pars}{Named numeric vector of parameters to use for priors (if use_prior is TRUE)
+\itemize{
+  \item{\code{v_sd}: Gaussian SD of assymptotes (v_inter and v_final)}
+  \item{\code{rate_shape}: Shape of rate Gamma}
+  \item{\code{rate_scale}: Scale of rate Gamma}
+  \item{\code{time_shape}: Shape of t_rise and t_fall - t_rise Gamma}
+  \item{\code{time_scale}: Scale of t_rise and t_fall - t_rise Gamma}
+  }}
+
+\item{verbose}{if TRUE then print additional information}
 }
 \value{
 a timecourse list:
@@ -35,6 +50,8 @@ a timecourse list:
 Fit Timecourses
 }
 \examples{
+library(dplyr)
+
 timecourses <- simulate_timecourses(n = 5)
 
 timecourses \%>\%

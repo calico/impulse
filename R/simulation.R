@@ -3,6 +3,7 @@
 #' @param n number of timecourses to
 #' @param Pr_impulse probability of an impulse (versus a sigmoid)
 #' @inheritParams fit_timecourse
+#' @inheritParams estimate_timecourse_params_tf
 #' @param measurement_sd gaussian measurement noise to add
 #'
 #' @export
@@ -28,19 +29,19 @@ simulate_timecourses <- function (n, Pr_impulse = 0.3, timepts = seq(0, 120, by 
     tidyr::nest(-tc_id, -model, .key = "params") %>%
     dplyr::mutate(measurements = purrr::map2(params, model, fit_timecourse, timepts = timepts, fit.label  = "sim_fit"),
                   measurements = purrr::map(measurements, add_noise, measurement_sd = measurement_sd),
-                  tc_id = 1:n()) %>%
+                  tc_id = 1:dplyr::n()) %>%
     dplyr::rename(true_model = model)
 }
 
 add_noise <- function(measurements, measurement_sd) {
   measurements %>%
-    dplyr::mutate(abundance = rnorm(n(), mean = sim_fit, sd = measurement_sd))
+    dplyr::mutate(abundance = rnorm(dplyr::n(), mean = sim_fit, sd = measurement_sd))
 }
 
 #' Simulate parameters
 #'
 #' @param n # of parameter sets to simulate
-#' @inheritParams validate_priors
+#' @inheritParams estimate_timecourse_params_tf
 #'
 #' @export
 #'

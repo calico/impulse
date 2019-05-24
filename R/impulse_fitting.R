@@ -11,6 +11,17 @@
 #'   \item{\code{sigmoid}: one sigmoidal response},
 #'   \item{\code{impulse}: two sigmoidal responses}
 #'   }
+#' @param n_initializations Number of initializations to use for each timecourse.
+#' @param use_prior If FALSE, fit least squares. If TRUE, add priors for a MAP estimate.
+#' @param prior_pars Named numeric vector of parameters to use for priors (if use_prior is TRUE)
+#' \itemize{
+#'   \item{\code{v_sd}: Gaussian SD of assymptotes (v_inter and v_final)}
+#'   \item{\code{rate_shape}: Shape of rate Gamma}
+#'   \item{\code{rate_scale}: Scale of rate Gamma}
+#'   \item{\code{time_shape}: Shape of t_rise and t_fall - t_rise Gamma}
+#'   \item{\code{time_scale}: Scale of t_rise and t_fall - t_rise Gamma}
+#'   }
+#' @param verbose if TRUE then print additional information
 #'
 #' @return a timecourse list:
 #' \itemize{
@@ -20,6 +31,8 @@
 #'   }
 #'
 #' @examples
+#' library(dplyr)
+#'
 #' timecourses <- simulate_timecourses(n = 5)
 #'
 #' timecourses %>%
@@ -28,13 +41,7 @@
 #'   tidyr::nest(-true_model, .key = "measurements") %>%
 #'   # fit all models to each timecourse
 #'   tidyr::crossing(tibble::tibble(model = c("sigmoid", "impulse"))) %>%
-#'   dplyr::mutate(timecourse_params = purrr::map2(measurements, model, estimate_timecourse_params_tf, n_initializations = 10))
-#'
-#' sigmoids <- fit_timecourses_tensorflow(timecourses, model = "sigmoid", n_initializations = 50, use_prior = FALSE)
-#' impulses <- fit_timecourses_tensorflow(timecourse_subset, model = "impulse", n_initializations = 50, use_prior = FALSE)
-#'
-#' sigmoids <- fit_timecourses_tensorflow(timecourse_subset, model = "sigmoid", n_initializations = 60, use_prior = TRUE, verbose = TRUE)
-#' impulses <- fit_timecourses_tensorflow(timecourse_subset, model = "impulse", n_initializations = 60, use_prior = TRUE, verbose = TRUE)
+#'   dplyr::mutate(timecourse_params = purrr::map2(measurements, model, estimate_timecourse_params_tf, n_initializations = 40))
 #'
 #' @export
 estimate_timecourse_params_tf <- function(measurements, model = "sigmoid", n_initializations = 100, use_prior = TRUE,
@@ -311,7 +318,7 @@ estimate_timecourse_params_tf <- function(measurements, model = "sigmoid", n_ini
 #'
 #' Across multiple fits of a timecourse summarize the best fitting timecourse in terms of least-squares error as well as by lowest absolute V within a tolerance of the least-squares set.
 #'
-#' @param timecourse_list List output from \code{\link{estimate_timecourse_parameters_tf}}
+#' @param timecourse_list List output from \code{\link{estimate_timecourse_params_tf}}
 #' @param reduction_type How to choose the best parameter set, options are:
 #' \itemize{
 #'  \item{\code{loss-min}: lowest loss function},
@@ -400,6 +407,7 @@ reduce_best_timecourse_params <- function(timecourse_list, reduction_type = "los
 #' @param timecourse_parameters a one row data_frame containing each kinetic parameter as a separate column.
 #' @param timepts a numeric vector of timepoints to fit
 #' @param model sigmoid or impulse
+#' @param fit.label fitted values variable name
 #'
 #' @examples
 #' timecourse_parameters <- tibble::tibble(t_rise = 25, rate = 0.25, v_inter = 3, v_final = -3, t_fall = 45)
@@ -420,6 +428,7 @@ fit_timecourse <- function (timecourse_parameters, timepts = seq(0, 90, by = 1),
   } else {
     stop(model, ' is not a valid option for "model", use "sigmoid" or "impulse"')
   }
+  stopifnot(class(fit.label) == "character", length(fit.label) == 1)
 
   # combine parameters + times
 
