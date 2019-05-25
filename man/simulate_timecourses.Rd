@@ -15,6 +15,15 @@ simulate_timecourses(n, Pr_impulse = 0.3, timepts = seq(0, 120, by =
 
 \item{timepts}{a numeric vector of timepoints to fit}
 
+\item{prior_pars}{Named numeric vector of parameters to use for priors (if use_prior is TRUE)
+\itemize{
+  \item{\code{v_sd}: Gaussian SD of assymptotes (v_inter and v_final)}
+  \item{\code{rate_shape}: Shape of rate Gamma}
+  \item{\code{rate_scale}: Scale of rate Gamma}
+  \item{\code{time_shape}: Shape of t_rise and t_fall - t_rise Gamma}
+  \item{\code{time_scale}: Scale of t_rise and t_fall - t_rise Gamma}
+  }}
+
 \item{measurement_sd}{gaussian measurement noise to add}
 }
 \description{

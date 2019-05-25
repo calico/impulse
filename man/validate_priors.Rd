@@ -4,12 +4,23 @@
 \alias{validate_priors}
 \title{Validate Parameters}
 \usage{
-validate_priors(model, parameters)
+validate_priors(model, prior_pars)
 }
 \arguments{
-\item{model}{name of model to simulate}
+\item{model}{model to fit:
+\itemize{
+  \item{\code{sigmoid}: one sigmoidal response},
+  \item{\code{impulse}: two sigmoidal responses}
+  }}
 
-\item{prior_pars}{prior parameters for model}
+\item{prior_pars}{Named numeric vector of parameters to use for priors (if use_prior is TRUE)
+\itemize{
+  \item{\code{v_sd}: Gaussian SD of assymptotes (v_inter and v_final)}
+  \item{\code{rate_shape}: Shape of rate Gamma}
+  \item{\code{rate_scale}: Scale of rate Gamma}
+  \item{\code{time_shape}: Shape of t_rise and t_fall - t_rise Gamma}
+  \item{\code{time_scale}: Scale of t_rise and t_fall - t_rise Gamma}
+  }}
 }
 \description{
 Check that all required prior parameters are provided and have valid values

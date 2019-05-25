@@ -70,7 +70,7 @@ kinetics_plotting <- function(augmented_timecourses, saturation = 0.9, max_time,
       geom_text(data = kinetic_intervals$asympote_aesthetics_df %>% dplyr::filter(assymp_type == "v_inter"), aes(x = t_saturation_end, y = assymp + ifelse(assymp >= 0, 0.1, -0.1)), label = "v[inter]", parse = TRUE, size = 4) +
       geom_text(data = kinetic_intervals$asympote_aesthetics_df %>% dplyr::filter(assymp_type == "v_final"), aes(x = t_saturation_end, y = assymp + ifelse(assymp >= 0, 0.1, -0.1)), label = "v[final]", parse = TRUE, size = 4) +
       scale_linetype_manual(values = c("TRUE" = 1, "FALSE" = 2)) +
-      coord_cartesian(x = c(0, max_time))
+      coord_cartesian(xlim = c(0, max_time))
 
   }
 
@@ -85,7 +85,8 @@ kinetic_aesthetics <- function(fitted_kinetics, fitted_values, saturation = 0.9)
     tidyr::gather(par, value, -tc_id, -model) %>%
     dplyr::filter(!is.na(value)) %>%
     dplyr::left_join(fitted_values %>%
-                       dplyr::select(time, fit, tc_id, model), by = c("tc_id", "model")) %>%
+                       dplyr::select(time, fit, tc_id, model),
+                     by = c("tc_id", "model")) %>%
     dplyr::group_by(tc_id, par) %>%
     dplyr::arrange(abs(time - value)) %>%
     dplyr::slice(1) %>%

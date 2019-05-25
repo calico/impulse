@@ -60,12 +60,6 @@ timecourses \%>\%
   tidyr::nest(-true_model, .key = "measurements") \%>\%
   # fit all models to each timecourse
   tidyr::crossing(tibble::tibble(model = c("sigmoid", "impulse"))) \%>\%
-  dplyr::mutate(timecourse_params = purrr::map2(measurements, model, estimate_timecourse_params_tf, n_initializations = 10))
-
-sigmoids <- fit_timecourses_tensorflow(timecourses, model = "sigmoid", n_initializations = 50, use_prior = FALSE)
-impulses <- fit_timecourses_tensorflow(timecourse_subset, model = "impulse", n_initializations = 50, use_prior = FALSE)
-
-sigmoids <- fit_timecourses_tensorflow(timecourse_subset, model = "sigmoid", n_initializations = 60, use_prior = TRUE, verbose = TRUE)
-impulses <- fit_timecourses_tensorflow(timecourse_subset, model = "impulse", n_initializations = 60, use_prior = TRUE, verbose = TRUE)
+  dplyr::mutate(timecourse_params = purrr::map2(measurements, model, estimate_timecourse_params_tf, n_initializations = 25))
 
 }

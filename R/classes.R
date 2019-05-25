@@ -1,4 +1,5 @@
 #' @importFrom dplyr %>%
+#' @import tensorflow
 #' @import ggplot2
 update_namespace <- function (x) {
 
@@ -21,4 +22,18 @@ validate_priors <- function (model, prior_pars) {
 
   # validate parameters for model type
 
+  stopifnot(class(prior_pars) == "numeric")
+  required_pars <- c("v_sd", "rate_shape", "rate_scale", "time_shape", "time_scale")
+  provided_pars <- names(prior_pars)
+  missing_required_pars <- setdiff(required_pars, provided_pars)
+
+  if (length(missing_required_pars) != 0) {
+    stop ("missing ", length(missing_required_pars), " required parameters in \"prior_pars\": ", paste(missing_required_pars, collapse = ", "))
+  }
+
+  stopifnot(prior_pars['v_sd'] > 0)
+  stopifnot(prior_pars['rate_shape'] > 0)
+  stopifnot(prior_pars['rate_scale'] > 0)
+  stopifnot(prior_pars['time_shape'] > 0)
+  stopifnot(prior_pars['time_scale'] > 0)
 }

@@ -8,7 +8,7 @@ reduce_best_timecourse_params(timecourse_list,
   reduction_type = "loss-min", sufficiency_tolerance = 0.05)
 }
 \arguments{
-\item{timecourse_list}{List output from \code{\link{estimate_timecourse_parameters_tf}}}
+\item{timecourse_list}{List output from \code{\link{estimate_timecourse_params_tf}}}
 
 \item{reduction_type}{How to choose the best parameter set, options are:
 \itemize{

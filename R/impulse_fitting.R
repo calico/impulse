@@ -25,7 +25,8 @@
 #'
 #' @return a timecourse list:
 #' \itemize{
-#'   \item{\code{invalid_timecourse_fits}: tibble of parameter initializations for initializations that went to NaN for debugging},
+#'   \item{\code{invalid_timecourse_fits}: tibble of parameter initializations for initializations
+#'   that went to NaN for debugging},
 #'   \item{\code{loss}: tibble of losses for each tc_id and inititalization (init_id)},
 #'   \item{\code{parameters}: tibble of final parameters for each tc_id and initialization (init_id)}
 #'   }
@@ -41,7 +42,9 @@
 #'   tidyr::nest(-true_model, .key = "measurements") %>%
 #'   # fit all models to each timecourse
 #'   tidyr::crossing(tibble::tibble(model = c("sigmoid", "impulse"))) %>%
-#'   dplyr::mutate(timecourse_params = purrr::map2(measurements, model, estimate_timecourse_params_tf, n_initializations = 40))
+#'   dplyr::mutate(timecourse_params = purrr::map2(measurements, model,
+#'                                     estimate_timecourse_params_tf,
+#'                                     n_initializations = 25))
 #'
 #' @export
 estimate_timecourse_params_tf <- function(measurements, model = "sigmoid", n_initializations = 100, use_prior = TRUE,
@@ -51,8 +54,6 @@ estimate_timecourse_params_tf <- function(measurements, model = "sigmoid", n_ini
   if (!requireNamespace("tensorflow", quietly = TRUE)) {
     stop('The "tensorflow" package must be installed to use this function',
          call. = FALSE)
-  } else {
-    library(tensorflow)
   }
 
   stopifnot("data.frame" %in% class(measurements))
@@ -243,9 +244,9 @@ estimate_timecourse_params_tf <- function(measurements, model = "sigmoid", n_ini
 
         # keep track of initialization for error checking
         initial_vals <- lapply(parameters,
-                               function(variable){tibble::data_frame(variable = variable,
-                                                                     init_id = 1:n_initializations,
-                                                                     value = sess$run(eval(parse(text = variable))))}) %>%
+                               function(variable){tibble::tibble(variable = variable,
+                                                                 init_id = 1:n_initializations,
+                                                                 value = sess$run(eval(parse(text = variable))))}) %>%
           dplyr::bind_rows()
 
         past_loss <- 100000
@@ -286,24 +287,24 @@ estimate_timecourse_params_tf <- function(measurements, model = "sigmoid", n_ini
     # fit parameters
 
     output$parameters <- lapply(parameters,
-                                function(variable){tibble::data_frame(variable = variable,
-                                                                      init_id = 1:n_initializations,
-                                                                      value = sess$run(eval(parse(text = variable))))}) %>%
+                                function(variable){tibble::tibble(variable = variable,
+                                                                  init_id = 1:n_initializations,
+                                                                  value = sess$run(eval(parse(text = variable))))}) %>%
       dplyr::bind_rows() %>%
       dplyr::filter(init_id %in% valid_parameter_sets) %>%
       dplyr::mutate(tc_id = a_tc_id) %>%
       dplyr::select(tc_id, init_id, variable, value)
 
     output$loss <- if (use_prior) {
-      tibble::data_frame(tc_id = a_tc_id,
-                         init_id = valid_parameter_sets,
-                         loss = current_losses[valid_parameter_sets],
-                         logLik = sess$run(normal_logLik, feed_dict = timecourse_dict)[valid_parameter_sets],
-                         logPriorPr = sess$run(model_log_pr, feed_dict = timecourse_dict)[valid_parameter_sets])
+      tibble::tibble(tc_id = a_tc_id,
+                     init_id = valid_parameter_sets,
+                     loss = current_losses[valid_parameter_sets],
+                     logLik = sess$run(normal_logLik, feed_dict = timecourse_dict)[valid_parameter_sets],
+                     logPriorPr = sess$run(model_log_pr, feed_dict = timecourse_dict)[valid_parameter_sets])
     } else {
-      tibble::data_frame(tc_id = a_tc_id,
-                         init_id = valid_parameter_sets,
-                         loss = current_losses[valid_parameter_sets])
+      tibble::tibble(tc_id = a_tc_id,
+                     init_id = valid_parameter_sets,
+                     loss = current_losses[valid_parameter_sets])
     }
 
     all_timecourse_fits[[entry_number]] <- output
@@ -404,13 +405,14 @@ reduce_best_timecourse_params <- function(timecourse_list, reduction_type = "los
 #'
 #' Fit the parameters of a sigmoid or impulse model to a set of time points.
 #'
-#' @param timecourse_parameters a one row data_frame containing each kinetic parameter as a separate column.
+#' @param timecourse_parameters a one row tibble containing each kinetic parameter as a separate column.
 #' @param timepts a numeric vector of timepoints to fit
 #' @param model sigmoid or impulse
 #' @param fit.label fitted values variable name
 #'
 #' @examples
-#' timecourse_parameters <- tibble::tibble(t_rise = 25, rate = 0.25, v_inter = 3, v_final = -3, t_fall = 45)
+#' timecourse_parameters <- tibble::tibble(t_rise = 25, rate = 0.25, v_inter = 3,
+#'                                        v_final = -3, t_fall = 45)
 #' timecourse_parameters <- tibble::tibble(t_rise = 45, rate = 1, v_inter = 3)
 #' fit_timecourse(timecourse_parameters, model = "sigmoid")
 #'

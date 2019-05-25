@@ -36,10 +36,10 @@ impulse_sigmoid_comparison <- function(timecourse_losses, fdr_cutoff = 0.001) {
     dplyr::mutate(logLik_diff = impulse - sigmoid,
                   logLik_diff = pmax(logLik_diff, 0),
                   # apply likelihood ratio test
-                  model_pchisq = pchisq(logLik_diff, df = 2, lower.tail = FALSE),
+                  model_pchisq = stats::pchisq(logLik_diff, df = 2, lower.tail = FALSE),
                   # correct using Benjamini-Hochberg (using this instead of Storey because there is an enrichment of p-values near 1 due to
                   # timecourses with strong prior constraints which were fit much better with a sigmoid than an impulse
-                  model_qchisq = p.adjust(model_pchisq, method = "BH"),
+                  model_qchisq = stats::p.adjust(model_pchisq, method = "BH"),
                   best_model = dplyr::case_when(model_qchisq < 0.001 ~ "impulse",
                                                 TRUE ~ "sigmoid")) %>%
     dplyr::select(tc_id, logLik_diff, model_pchisq, model_qchisq, best_model)
