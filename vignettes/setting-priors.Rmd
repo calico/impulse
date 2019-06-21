@@ -1,5 +1,5 @@
 ---
-title: "Setting impulse priors"
+title: "Setting Impulse Priors"
 author: "Sean R. Hackett"
 date: "`r Sys.Date()`"
 output:
@@ -7,7 +7,7 @@ output:
     fig_width: 6
     fig_height: 6
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Setting Impulse Priors}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
