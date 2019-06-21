@@ -17,7 +17,9 @@ library(purrr)
 theme_set(theme_bw() + theme(text = element_text(size = 15)))
 
 library(impulse)
-tensorflow::install_tensorflow()
+if (!reticulate::py_module_available("tensorflow"))
+  tensorflow::install_tensorflow()
+}
 ```
 
 ## Overview

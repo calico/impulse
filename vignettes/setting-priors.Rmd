@@ -39,7 +39,7 @@ sigmoid_impulse_plot <- function(timecourse_parameters) {
     geom_path(size = 2)
   
   }
-sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 0.25, v_inter = 3, v_final = -3, t_fall = 45))
+sigmoid_impulse_plot(tibble(t_rise = 25, rate = 0.25, v_inter = 3, v_final = -3, t_fall = 45))
 ```
 
 **sigmoid:**
