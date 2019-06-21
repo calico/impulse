@@ -10,7 +10,7 @@
 #'
 #' @examples
 #' simulate_timecourses(n = 20)
-simulate_timecourses <- function (n, Pr_impulse = 0.3, timepts = seq(0, 120, by = 5),
+simulate_timecourses <- function (n, Pr_impulse = 0.5, timepts = seq(0, 120, by = 5),
                                   prior_pars = c("v_sd" = 1.2, "rate_shape" = 2, "rate_scale" = 0.25, "time_shape" = 2, "time_scale" = 15),
                                   measurement_sd = 0.2) {
 
@@ -83,11 +83,11 @@ simulate_parameters <- function (n, model = "sigmoid",  prior_pars = c("v_sd" = 
   }
 }
 
-rnorm_just_tails <- function(n, mean_val, sd_val, alpha = 0.05) {
+rnorm_just_tails <- function(n, mean_val, sd_val, alpha = 0.01) {
 
   stopifnot(length(alpha) == 1, alpha < 0.5)
 
   stats::runif(n, -1*alpha, 1*alpha) %>%
     {ifelse(. < 0, 1 + ., .)} %>%
-    {stats::qnorm(p = ., mean = mean, sd = sd)}
+    {stats::qnorm(p = ., mean = mean_val, sd = sd_val)}
 }

@@ -41,7 +41,8 @@ estimate_timecourse_params_tf(measurements, model = "sigmoid",
 \value{
 a timecourse list:
 \itemize{
-  \item{\code{invalid_timecourse_fits}: tibble of parameter initializations for initializations that went to NaN for debugging},
+  \item{\code{invalid_timecourse_fits}: tibble of parameter initializations for initializations
+  that went to NaN for debugging},
   \item{\code{loss}: tibble of losses for each tc_id and inititalization (init_id)},
   \item{\code{parameters}: tibble of final parameters for each tc_id and initialization (init_id)}
   }
@@ -52,6 +53,10 @@ Fit Timecourses
 \examples{
 library(dplyr)
 
+if (!reticulate::py_module_available("tensorflow")) {
+   tensorflow::install_tensorflow()
+ }
+
 timecourses <- simulate_timecourses(n = 5)
 
 timecourses \%>\%
@@ -60,6 +65,8 @@ timecourses \%>\%
   tidyr::nest(-true_model, .key = "measurements") \%>\%
   # fit all models to each timecourse
   tidyr::crossing(tibble::tibble(model = c("sigmoid", "impulse"))) \%>\%
-  dplyr::mutate(timecourse_params = purrr::map2(measurements, model, estimate_timecourse_params_tf, n_initializations = 25))
+  dplyr::mutate(timecourse_params = purrr::map2(measurements, model,
+                                    estimate_timecourse_params_tf,
+                                    n_initializations = 25))
 
 }

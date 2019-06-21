@@ -8,7 +8,7 @@ fit_timecourse(timecourse_parameters, timepts = seq(0, 90, by = 1),
   model = "sigmoid", fit.label = "fit")
 }
 \arguments{
-\item{timecourse_parameters}{a one row data_frame containing each kinetic parameter as a separate column.}
+\item{timecourse_parameters}{a one row tibble containing each kinetic parameter as a separate column.}
 
 \item{timepts}{a numeric vector of timepoints to fit}
 
@@ -20,7 +20,8 @@ fit_timecourse(timecourse_parameters, timepts = seq(0, 90, by = 1),
 Fit the parameters of a sigmoid or impulse model to a set of time points.
 }
 \examples{
-timecourse_parameters <- tibble::tibble(t_rise = 25, rate = 0.25, v_inter = 3, v_final = -3, t_fall = 45)
+timecourse_parameters <- tibble::tibble(t_rise = 25, rate = 0.25, v_inter = 3,
+                                       v_final = -3, t_fall = 45)
 timecourse_parameters <- tibble::tibble(t_rise = 45, rate = 1, v_inter = 3)
 fit_timecourse(timecourse_parameters, model = "sigmoid")
 
