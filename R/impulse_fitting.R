@@ -34,7 +34,7 @@
 #' @examples
 #' library(dplyr)
 #'
-#' if (!reticulate::py_module_available("tensorflow"))
+#' if (!reticulate::py_module_available("tensorflow")) {
 #'    tensorflow::install_tensorflow()
 #'  }
 #'
