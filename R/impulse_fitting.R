@@ -33,10 +33,7 @@
 #'
 #' @examples
 #' library(dplyr)
-#'
-#' if (!reticulate::py_module_available("tensorflow")) {
-#'    tensorflow::install_tensorflow()
-#'  }
+#' auto_config_tf()
 #'
 #' timecourses <- simulate_timecourses(n = 5)
 #'

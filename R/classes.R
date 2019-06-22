@@ -37,3 +37,23 @@ validate_priors <- function (model, prior_pars) {
   stopifnot(prior_pars['time_shape'] > 0)
   stopifnot(prior_pars['time_scale'] > 0)
 }
+
+#' Auto Configurate TensforFlow
+#'
+#' Load and install the r-tensorflow conda environment (python / tensorflow can be setup in other ways with reticulate).
+#'
+#' @export
+auto_config_tf <- function () {
+
+  conda_envs <- reticulate::conda_list()
+
+  if ("character" %in% class(conda_envs) || !("r-tensorflow" %in% conda_envs$name)) {
+    tensorflow::install_tensorflow()
+  } else {
+    reticulate::use_condaenv("r-tensorflow")
+
+    if (!reticulate::py_module_available("tensorflow")) {
+      tensorflow::install_tensorflow()
+    }
+  }
+}
