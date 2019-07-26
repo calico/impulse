@@ -5,7 +5,7 @@
 \title{Simulate parameters}
 \usage{
 simulate_parameters(n, model = "sigmoid", prior_pars = c(v_sd = 1.2,
-  rate_shape = 2, rate_scale = 0.25, time_shape = 2, time_scale = 15))
+  rate_shape = 2, rate_scale = 0.25, time_shape = 5, time_scale = 5))
 }
 \arguments{
 \item{n}{# of parameter sets to simulate}
