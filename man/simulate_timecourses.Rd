@@ -6,7 +6,7 @@
 \usage{
 simulate_timecourses(n, Pr_impulse = 0.5, timepts = seq(0, 120, by =
   5), prior_pars = c(v_sd = 1.2, rate_shape = 2, rate_scale = 0.25,
-  time_shape = 2, time_scale = 15), measurement_sd = 0.2)
+  time_shape = 1, time_scale = 30), measurement_sd = 0.2)
 }
 \arguments{
 \item{n}{number of timecourses to}

@@ -60,7 +60,7 @@ simulate_parameters <- function (n, model = "sigmoid",  prior_pars = c("v_sd" = 
   }
 
   if (model %in% c("impulse")) {
-    v_change <- rnorm_just_tails(n, mean = 0, sd = prior_pars['v_sd'], alpha = 0.2)
+    v_change <- rnorm_just_tails(n,  mean_val = 0, sd_val = prior_pars['v_sd'], alpha = 0.2)
     v_final <- v_inter + v_change
     t_diff <- stats::rgamma(n, shape = prior_pars['time_shape'], scale = prior_pars['time_scale'])
     t_fall <- t_rise + t_diff

@@ -4,9 +4,9 @@ Version: 1.0.1
 Authors@R: person(given = "Sean", family = "Hackett",
            role = c("aut", "cre"),
            email = "sean@calicolabs.com")
-Author: Sean Hackett
+Author: Sean Hackett [aut, cre]
 Maintainer: Sean Hackett <sean@calicolabs.com>
-Description: This package implements the phenomonological kinetic model of Chechik and Koller using
+Description: Implements the phenomonological kinetic model of Chechik and Koller using
   Bayesian priors to facilitate interpretability. Two models can be fit: a sigmoidal model parameterized
   by a half-max time constant, an assymptote and a rate constant, as well as an impulse model which adds
   a second sigmoidal response described by a second time constant and assymptote. Priors enforce
