@@ -12,6 +12,4 @@ install:
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
   - export PATH=/home/travis/miniconda/bin:$PATH
-  - conda update --yes
-  - conda create --yes -n r-tensorflow python=$TRAVIS_PYTHON_VERSION
 
