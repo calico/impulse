@@ -1,0 +1,12 @@
+auto_config_tf          Auto Configurate TensforFlow
+estimate_timecourse_params_tf
+                        Fit Timecourses
+fit_timecourse          Fit timecourse
+impulse_sigmoid_comparison
+                        Impulse Sigmoid Comparison
+kinetics_plotting       Kinetics plotting
+reduce_best_timecourse_params
+                        Reduce to best timecourse parameters
+simulate_parameters     Simulate parameters
+simulate_timecourses    Simulate timecourses
+validate_priors         Validate Parameters

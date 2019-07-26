@@ -30,7 +30,7 @@ To have data to work with, 20 timecourses are randomly generated which include a
 
 ```{r simulate_timecourses, fig.height = 10, fig.width = 10}
 set.seed(1234)
-timecourses <- simulate_timecourses(n = 20)
+timecourses <- simulate_timecourses(n = 5)
 
 # plot of timecourses + parameters
 timecourses %>%

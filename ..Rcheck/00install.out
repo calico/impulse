@@ -1,0 +1,10 @@
+* installing *source* package ‘impulse’ ...
+** R
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+*** copying figures
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+* DONE (impulse)

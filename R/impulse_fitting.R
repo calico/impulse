@@ -35,7 +35,7 @@
 #' library(dplyr)
 #' auto_config_tf()
 #'
-#' timecourses <- simulate_timecourses(n = 5)
+#' timecourses <- simulate_timecourses(n = 2)
 #'
 #' timecourses %>%
 #'   tidyr::unnest(measurements) %>%
