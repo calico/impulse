@@ -25,6 +25,7 @@ Imports:
     reticulate,
     ggplot2
 Suggests: 
+    devtools,
     knitr,
     rmarkdown,
     gridExtra
