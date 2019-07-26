@@ -70,13 +70,27 @@ to guide the tuning of parameters for other application.
 
 ## Installation
 
-The package is under active development though and the latest set of
-features can be obtained by installing from this repository using
-`devtools`
+The package utilizes TensorFlow for parameter fitting so a python
+distribution is required for use. This can be configured using any of
+the methods discussed in
+[R-TensorFlow](https://github.com/rstudio/tensorflow), but using Conda
+(e.g., [Miniconda](https://docs.conda.io/en/latest/miniconda.html) is
+most straight-forward to configure).
+
+is under active development though and the latest set of features can be
+obtained by installing from this repository using `devtools`
 
 ``` r
+# install.packages("devtools")
 devtools::install_github('calico/impulse')
 
 # for vignettes
 devtools::install_github('calico/impulse', build = TRUE, build_opts = c("--no-resave-data", "--no-manual"))
+```
+
+Once *impulse* is installed, fast tensorflow configuration with conda
+can be done by invoking
+
+``` r
+auto_config_tf()
 ```
