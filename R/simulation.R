@@ -11,7 +11,7 @@
 #' @examples
 #' simulate_timecourses(n = 20)
 simulate_timecourses <- function (n, Pr_impulse = 0.5, timepts = seq(0, 120, by = 5),
-                                  prior_pars = c("v_sd" = 1.2, "rate_shape" = 2, "rate_scale" = 0.25, "time_shape" = 2, "time_scale" = 15),
+                                  prior_pars = c("v_sd" = 1.2, "rate_shape" = 2, "rate_scale" = 0.25, "time_shape" = 1, "time_scale" = 30),
                                   measurement_sd = 0.2) {
 
   stopifnot(class(Pr_impulse) == "numeric", length(Pr_impulse) == 1, Pr_impulse >= 0, Pr_impulse <= 1)
