@@ -18,6 +18,8 @@ knitr::opts_chunk$set(
 
 # Impulse
 
+[![Travis-CI Build Status](https://travis-ci.org/calico/impulse.svg?branch=master)](https://travis-ci.org/calico/impulse)
+
 This package implements the [Chechik & Koller](https://www.ncbi.nlm.nih.gov/pubmed/19193146) impulse model using TensorFlow to improve scaleability and allow for the introduction of priors which improve model interpretability. This model describes timeseries data using two sigmoidal responses which are sufficient to capture the dynamics of many biological systems. While this model was formulated to capture biological dynamics, the model is generally suitable for any kind of saturation behavior described by half-max value(s) and assymptote(s).
 
 The core functionality of **impulse** is:

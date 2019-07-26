@@ -3,6 +3,9 @@
 
 # Impulse
 
+[![Travis-CI Build
+Status](https://travis-ci.org/calico/impulse.svg?branch=master)](https://travis-ci.org/calico/impulse)
+
 This package implements the [Chechik &
 Koller](https://www.ncbi.nlm.nih.gov/pubmed/19193146) impulse model
 using TensorFlow to improve scaleability and allow for the introduction
@@ -57,7 +60,7 @@ determines the model that best fits each timecourse.
 
 ### Formulating priors
 
-The most important contribution of this work is applying priors to
+The most important contribution of this work is aaplying priors to
 impulse models since there are natural constraints on parameter values
 which should hold (non-negative rates, non-negative times, rise before
 fall). When these constraints are violated, a good fit may occur, but
