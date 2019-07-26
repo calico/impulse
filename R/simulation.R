@@ -47,14 +47,14 @@ add_noise <- function(measurements, measurement_sd) {
 #'
 #' @examples
 #' simulate_parameters(n = 20)
-simulate_parameters <- function (n, model = "sigmoid",  prior_pars = c("v_sd" = 1.2, "rate_shape" = 2, "rate_scale" = 0.25, "time_shape" = 2, "time_scale" = 15)) {
+simulate_parameters <- function (n, model = "sigmoid",  prior_pars = c("v_sd" = 1.2, "rate_shape" = 2, "rate_scale" = 0.25, "time_shape" = 5, "time_scale" = 5)) {
 
   stopifnot(class(n) %in% c("numeric", "integer"), n >= 1)
 
   validate_priors(model, prior_pars)
 
   if (model %in% c("sigmoid", "impulse")) {
-    v_inter <- rnorm_just_tails(n, mean = 0, sd = prior_pars['v_sd'], alpha = 0.2)
+    v_inter <- rnorm_just_tails(n, mean_val = 0, sd_val = prior_pars['v_sd'], alpha = 0.2)
     t_rise <- stats::rgamma(n, shape = prior_pars['time_shape'], scale = prior_pars['time_scale'])
     rate <- stats::rgamma(n, shape = prior_pars['rate_shape'], scale = prior_pars['rate_scale'])
   }
