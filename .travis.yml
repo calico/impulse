@@ -1,3 +1,4 @@
+install: travis_wait 30 mvn install
 language: r
 warnings_are_errors: true
 sudo: required
@@ -13,8 +14,6 @@ install:
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
   - export PATH=/home/travis/miniconda/bin:$PATH
-  # allow for a longer run time since the vignette is large
-  - travis_wait 30 mvn install
   # setup R packages
   - R -e 'install.packages("devtools")'
   - R -e 'devtools::install_deps(dep = T)'
