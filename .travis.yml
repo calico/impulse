@@ -1,4 +1,3 @@
-install: travis_wait 30 mvn install
 language: r
 warnings_are_errors: true
 sudo: required
@@ -20,4 +19,4 @@ install:
 
 script:
   - R CMD build .
-  - R CMD check *tar.gz
+  - travis_wait 30 R CMD check *tar.gz
