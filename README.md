@@ -57,7 +57,7 @@ determines the model that best fits each timecourse.
 
 ### Formulating priors
 
-The most important contribution of this work is aaplying priors to
+The most important contribution of this work is applying priors to
 impulse models since there are natural constraints on parameter values
 which should hold (non-negative rates, non-negative times, rise before
 fall). When these constraints are violated, a good fit may occur, but
