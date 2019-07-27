@@ -32,6 +32,8 @@
 #'   }
 #'
 #' @examples
+#'
+#' \dontrun{
 #' library(dplyr)
 #' auto_config_tf()
 #'
@@ -46,6 +48,7 @@
 #'   dplyr::mutate(timecourse_params = purrr::map2(measurements, model,
 #'                                     estimate_timecourse_params_tf,
 #'                                     n_initializations = 25))
+#' }
 #'
 #' @export
 estimate_timecourse_params_tf <- function(measurements, model = "sigmoid", n_initializations = 100, use_prior = TRUE,
@@ -83,7 +86,7 @@ estimate_timecourse_params_tf <- function(measurements, model = "sigmoid", n_ini
       stop('"use_prior" is TRUE, but ', length(missing_pars), ' required parameters are missing - supply ', paste(missing_pars, collapse = ", "), ' with "prior_pars"')
     }
   } else {
-    initialization_pars = c("v_sd" = sd(timecourses$log2_fc), "t_max" = max(timecourses$time))
+    initialization_pars = c("v_sd" = stats::sd(timecourses$log2_fc), "t_max" = max(timecourses$time))
   }
 
   # Setup initialization
@@ -351,7 +354,7 @@ reduce_best_timecourse_params <- function(timecourse_list, reduction_type = "los
     dplyr::group_by(tc_id) %>%
     dplyr::arrange(loss) %>%
     dplyr::mutate(n_near_min = sum(loss - min(loss) < sufficiency_tolerance),
-                  all_valid = n())
+                  all_valid = dplyr::n())
 
   good_init_parameters <- good_inits %>%
     # select all parameter sets within 0.05 of "best" fitting parameter set

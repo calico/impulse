@@ -24,7 +24,7 @@ kinetics_plotting <- function(augmented_timecourses, saturation = 0.9, max_time,
   stopifnot(class(fit_timepoints) %in% c("numeric", "integer"), length(fit_timepoints) == 1, fit_timepoints > 0)
 
   if ("measurements" %in% present_variables) {
-    measurements <- augmented_timecourses %>% unnest(measurements)
+    measurements <- augmented_timecourses %>% tidyr::unnest(measurements)
     stopifnot(all(c("tc_id", "time", "abundance") %in% colnames(measurements)))
 
     kinetics_plot <- ggplot(measurements) +
@@ -33,7 +33,7 @@ kinetics_plotting <- function(augmented_timecourses, saturation = 0.9, max_time,
 
   } else {
     # no measurements provide
-    kinetics_plot <- ggplot(tibble(tc_id = NA_integer_[-1], time = 0[-1], abundance = 0[-1])) +
+    kinetics_plot <- ggplot(tibble::tibble(tc_id = NA_integer_[-1], time = 0[-1], abundance = 0[-1])) +
       geom_point(aes(x = time, y = abundance)) +
       facet_wrap(~ tc_id)
   }
@@ -42,7 +42,7 @@ kinetics_plotting <- function(augmented_timecourses, saturation = 0.9, max_time,
 
     fitted_kinetics <- augmented_timecourses %>%
       dplyr::select(tc_id, best_model, fitted_kinetics) %>%
-      unnest(fitted_kinetics)
+      tidyr::unnest(fitted_kinetics)
 
     timepoints <- seq(from = 0, max_time, length.out = fit_timepoints)
     fitted_values <- fitted_kinetics %>%

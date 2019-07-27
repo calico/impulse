@@ -14,18 +14,21 @@ Description: Implements the phenomonological kinetic model of Chechik and Koller
   parameter ranges. Tensorflow is used to optimize the maximum posterior estimate (MAP) as a combination
   of a non-linear least squares likelihood and priors on kinetic coefficients.
 License: MIT + file LICENSE
+SystemRequirements: Python (>= 2.7)
 Encoding: UTF-8
 LazyData: true
+Depends:
+    R (>= 3.1)
 Imports:
     tibble,
     dplyr,
     tidyr,
     purrr,
-    tensorflow,
+    rlang,
+    tensorflow (>= 1.9),
     reticulate,
     ggplot2
 Suggests: 
-    devtools,
     knitr,
     rmarkdown,
     gridExtra

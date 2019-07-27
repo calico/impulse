@@ -51,6 +51,8 @@ a timecourse list:
 Fit Timecourses
 }
 \examples{
+
+\dontrun{
 library(dplyr)
 auto_config_tf()
 
@@ -65,5 +67,6 @@ timecourses \%>\%
   dplyr::mutate(timecourse_params = purrr::map2(measurements, model,
                                     estimate_timecourse_params_tf,
                                     n_initializations = 25))
+}
 
 }

@@ -1,9 +1,13 @@
 #' @importFrom dplyr %>%
+#' @importFrom rlang :=
 #' @import tensorflow
 #' @import ggplot2
-update_namespace <- function (x) {
-
-}
+utils::globalVariables(c("sim_fit", "timecourses", "tc_id", "init_id", "variable", "value",
+                         "time", "fit", "model", "logLik", "sigmoid", "impulse", "logLik_diff",
+                         "model_pchisq", "model_qchisq", "t_rise", "t_fall", "par", "params",
+                         "parameters", "measurements", "model_pars", "time", "v_inter", "v_final", ".",
+                         "rate", "assymp_type", "assymp", "t_saturation_start", "t_saturation_end",
+                         "abundance", "best_model", "fitted_timecourses", "loss", "v_abs_sum"))
 
 #' Validate Parameters
 #'
