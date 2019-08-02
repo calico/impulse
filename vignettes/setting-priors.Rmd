@@ -58,7 +58,7 @@ $$
 \Omega \in \{v_{\text{inter}}, v_{\text{final}}, t_{\text{rise}}, t_{\text{fall}}, \beta\}
 $$
 
-## Constraining assymptotes using a Gaussian prior
+## Constraining asymptotes using a Gaussian prior
 
 mean = 0
 

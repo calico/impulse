@@ -26,7 +26,7 @@ This vignette applies much of the functionality included in the **impulse** pack
 
 ## Simulate timecourses
 
-To have data to work with, 20 timecourses are randomly generated which include a mixture of sigmoid (single response) and impulse (double sigmoid) curves with associated timing, assymptote and rate (steepness) parameters.
+To have data to work with, 20 timecourses are randomly generated which include a mixture of sigmoid (single response) and impulse (double sigmoid) curves with associated timing, assmptote and rate (steepness) parameters.
 
 ```{r simulate_timecourses, fig.height = 10, fig.width = 10}
 set.seed(1)
@@ -83,7 +83,7 @@ true_parameters %>%
   geom_abline(intercept = 0, slope = 1, color = "blue")
 ```
 
-Here, we can see that timing coefficients and assymptotes are very well estimated for sigmoidal models and generally well estimated for impulses. The occational impulse which looks very sigmoidal will have unreliable coefficients since it will *de facto* be a sigmoid. Rate coefficients are difficult to estimate because subtle differences in noise can result in large differences in estimated rate.
+Here, we can see that timing coefficients and asymptotes are very well estimated for sigmoidal models and generally well estimated for impulses. The occational impulse which looks very sigmoidal will have unreliable coefficients since it will *de facto* be a sigmoid. Rate coefficients are difficult to estimate because subtle differences in noise can result in large differences in estimated rate.
 
 ## Model comparison
 
