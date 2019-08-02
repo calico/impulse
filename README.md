@@ -14,7 +14,7 @@ timeseries data using two sigmoidal responses which are sufficient to
 capture the dynamics of many biological systems. While this model was
 formulated to capture biological dynamics, the model is generally
 suitable for any kind of saturation behavior described by half-max
-value(s) and assymptote(s).
+value(s) and asymptote(s).
 
 The core functionality of **impulse** is:
 
@@ -26,7 +26,7 @@ The core functionality of **impulse** is:
 
 ## The models
 
-This package revolves around two phenomonological models, the sigmoid
+This package revolves around two phenomenological models, the sigmoid
 (single response) and impulse (double sigmoid). The plot below
 highlights the value of these models. It is easy to mentally convert
 between timecourses and kinetic paramters, but the kinetic parameters
@@ -37,7 +37,7 @@ A sigmoid with parameters {t\_rise = 25, v\_inter = 3, rate = 0.25} and
 an impulse with two additional parameters {t\_fall = 45, v\_final = -3}
 are shown. The t\_rise of 25 indicates a half-max time of 25 and
 v\_inter of 3 indicates saturation at 3. In the impulse model there is a
-second response with a half-max time of 45 and final assymptote at -3.
+second response with a half-max time of 45 and final asymptote at -3.
 
 ![](man/figures/README-sigmoid_impulse_compare-1.png)<!-- -->
 
@@ -74,8 +74,8 @@ The package utilizes TensorFlow for parameter fitting so a python
 distribution is required for use. This can be configured using any of
 the methods discussed in
 [R-TensorFlow](https://github.com/rstudio/tensorflow), but using Conda
-(e.g., [Miniconda](https://docs.conda.io/en/latest/miniconda.html) is
-most straight-forward to configure).
+(e.g., [Miniconda](https://docs.conda.io/en/latest/miniconda.html)) is
+most straight-forward to configure.
 
 is under active development though and the latest set of features can be
 obtained by installing from this repository using `devtools`
