@@ -54,15 +54,15 @@ simulate_parameters <- function (n, model = "sigmoid",  prior_pars = c("v_sd" = 
   validate_priors(model, prior_pars)
 
   if (model %in% c("sigmoid", "impulse")) {
-    v_inter <- rnorm_just_tails(n, mean_val = 0, sd_val = prior_pars['v_sd'], alpha = 0.2)
-    t_rise <- stats::rgamma(n, shape = prior_pars['time_shape'], scale = prior_pars['time_scale'])
-    rate <- stats::rgamma(n, shape = prior_pars['rate_shape'], scale = prior_pars['rate_scale'])
+    v_inter <- rnorm_just_tails(n, mean_val = 0, sd_val = prior_pars["v_sd"], alpha = 0.2)
+    t_rise <- stats::rgamma(n, shape = prior_pars["time_shape"], scale = prior_pars["time_scale"])
+    rate <- stats::rgamma(n, shape = prior_pars["rate_shape"], scale = prior_pars["rate_scale"])
   }
 
   if (model %in% c("impulse")) {
-    v_change <- rnorm_just_tails(n,  mean_val = 0, sd_val = prior_pars['v_sd'], alpha = 0.2)
+    v_change <- rnorm_just_tails(n,  mean_val = 0, sd_val = prior_pars["v_sd"], alpha = 0.2)
     v_final <- v_inter + v_change
-    t_diff <- stats::rgamma(n, shape = prior_pars['time_shape'], scale = prior_pars['time_scale'])
+    t_diff <- stats::rgamma(n, shape = prior_pars["time_shape"], scale = prior_pars["time_scale"])
     t_fall <- t_rise + t_diff
   }
 
