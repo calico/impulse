@@ -7,5 +7,6 @@
 auto_config_tf()
 }
 \description{
-Load and install the r-tensorflow conda environment (python / tensorflow can be setup in other ways with reticulate).
+Load and install the r-tensorflow conda environment (python / tensorflow
+can be setup in other ways with reticulate).
 }

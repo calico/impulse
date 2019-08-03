@@ -5,7 +5,8 @@
 \title{Simulate parameters}
 \usage{
 simulate_parameters(n, model = "sigmoid", prior_pars = c(v_sd = 1.2,
-  rate_shape = 2, rate_scale = 0.25, time_shape = 5, time_scale = 5))
+  rate_shape = 2, rate_scale = 0.25, time_shape = 5, time_scale = 5),
+  alpha = 0.01)
 }
 \arguments{
 \item{n}{# of parameter sets to simulate}
@@ -24,6 +25,8 @@ simulate_parameters(n, model = "sigmoid", prior_pars = c(v_sd = 1.2,
   \item{\code{time_shape}: Shape of t_rise and t_fall - t_rise Gamma}
   \item{\code{time_scale}: Scale of t_rise and t_fall - t_rise Gamma}
   }}
+
+\item{alpha}{tail fraction to sample from for asymptote changes}
 }
 \description{
 Simulate parameters
