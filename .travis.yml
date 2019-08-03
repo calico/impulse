@@ -16,8 +16,6 @@ before_install:
   - conda update --yes conda
 
 install:
-  # setup conda
-  - conda create -n r-tensorflow tensorflow
   # setup R packages
   - R -e 'install.packages("devtools")'
   - R -e 'devtools::install_deps(dep = T)'
