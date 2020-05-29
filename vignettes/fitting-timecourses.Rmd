@@ -17,7 +17,8 @@ library(purrr)
 theme_set(theme_bw() + theme(text = element_text(size = 15)))
 
 library(impulse)
-auto_config_tf()
+#auto_config_tf()
+reticulate::use_virtualenv("r-reticulate")
 ```
 
 ## Overview
@@ -30,7 +31,7 @@ To have data to work with, 20 timecourses are randomly generated which include a
 
 ```{r simulate_timecourses, fig.height = 10, fig.width = 10}
 set.seed(1)
-timecourses <- simulate_timecourses(n = 6)
+timecourses <- simulate_timecourses(n = 20)
 
 # plot of timecourses + parameters
 timecourses %>%
@@ -52,7 +53,7 @@ We want to evaluate how well each timecourse fits each model (sigmoid and impuls
 timecourse_parameters <- timecourses %>%
   unnest(measurements) %>%
   # separate by true model
-  nest(-true_model, .key = "measurements") %>%
+  nest_legacy(-true_model, .key = "measurements") %>%
   # fit all models to each timecourse
   crossing(tibble(model = c("sigmoid", "impulse"))) %>%
   mutate(timecourse_list = map2(measurements, model, estimate_timecourse_params_tf, n_initializations = 50)) %>%
@@ -112,7 +113,7 @@ fitted_kinetics <- timecourse_parameters %>%
   unnest(parameters) %>%
   select(tc_id, model, variable, value) %>%
   spread(variable, value) %>%
-  nest(-tc_id, .key = "fitted_kinetics")
+  nest_legacy(-tc_id, .key = "fitted_kinetics")
 
 augmented_timecourses <- timecourses %>%
   left_join(fitted_kinetics, by =  "tc_id") %>%

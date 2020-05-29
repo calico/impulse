@@ -22,7 +22,7 @@ Depends:
 Imports:
     tibble,
     dplyr,
-    tidyr,
+    tidyr (>= 1.0),
     purrr,
     rlang,
     tensorflow (>= 1.9),

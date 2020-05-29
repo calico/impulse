@@ -112,17 +112,17 @@ estimate_timecourse_params_tf <-
 
     if (use_prior) {
       v_inter <- tf$Variable(
-        tf$random_normal(shape(n_initializations),
+        tf$random$normal(shape(n_initializations),
                          mean = 0,
                          stddev = prior_pars["v_sd"]),
         name = "v_inter")
       t_rise <- tf$Variable(
-        tf$random_gamma(shape(n_initializations),
+        tf$random$gamma(shape(n_initializations),
                         alpha = prior_pars["time_shape"],
                         beta = 1 / prior_pars["time_scale"]),
         name = "t_rise")
       rate <- tf$Variable(
-        tf$random_gamma(shape(n_initializations),
+        tf$random$gamma(shape(n_initializations),
                         alpha = prior_pars["rate_shape"],
                         beta = 1 / prior_pars["rate_scale"]),
         name = "rate")

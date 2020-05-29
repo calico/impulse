@@ -60,7 +60,7 @@ kinetics_plotting <- function(augmented_timecourses,
 
     timepoints <- seq(from = 0, max_time, length.out = fit_timepoints)
     fitted_values <- fitted_kinetics %>%
-      tidyr::nest(rate, t_rise, t_fall, v_inter, v_final,
+      tidyr::nest_legacy(rate, t_rise, t_fall, v_inter, v_final,
                   .key = "parameters") %>%
       dplyr::mutate(fitted_timecourses = purrr::map2(parameters, model,
                                                      fit_timecourse,

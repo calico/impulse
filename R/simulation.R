@@ -38,7 +38,7 @@ simulate_timecourses <-
     tidyr::unnest(model_pars)
 
   model_parameters %>%
-    tidyr::nest(-tc_id, -model, .key = "params") %>%
+    tidyr::nest_legacy(-tc_id, -model, .key = "params") %>%
     dplyr::mutate(measurements = purrr::map2(params, model,
                                              fit_timecourse,
                                              timepts = timepts,
