@@ -62,6 +62,8 @@ estimate_timecourse_params_tf <-
   if (!requireNamespace("tensorflow", quietly = TRUE)) {
     stop('The "tensorflow" package must be installed to use this function',
          call. = FALSE)
+  } else {
+    tensorflow::use_compat(version = "v1")
   }
 
   stopifnot("data.frame" %in% class(measurements))
@@ -112,17 +114,17 @@ estimate_timecourse_params_tf <-
 
     if (use_prior) {
       v_inter <- tf$Variable(
-        tf$random$normal(shape(n_initializations),
+        tf$random_normal(shape(n_initializations),
                          mean = 0,
                          stddev = prior_pars["v_sd"]),
         name = "v_inter")
       t_rise <- tf$Variable(
-        tf$random$gamma(shape(n_initializations),
+        tf$random_gamma(shape(n_initializations),
                         alpha = prior_pars["time_shape"],
                         beta = 1 / prior_pars["time_scale"]),
         name = "t_rise")
       rate <- tf$Variable(
-        tf$random$gamma(shape(n_initializations),
+        tf$random_gamma(shape(n_initializations),
                         alpha = prior_pars["rate_shape"],
                         beta = 1 / prior_pars["rate_scale"]),
         name = "rate")

@@ -17,8 +17,7 @@ library(purrr)
 theme_set(theme_bw() + theme(text = element_text(size = 15)))
 
 library(impulse)
-#auto_config_tf()
-reticulate::use_virtualenv("r-reticulate")
+auto_config_tf()
 ```
 
 ## Overview

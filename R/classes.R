@@ -61,12 +61,16 @@ auto_config_tf <- function () {
 
   if ("character" %in% class(conda_envs) ||
       !("r-tensorflow" %in% conda_envs$name)) {
-    tensorflow::install_tensorflow()
+    tensorflow::install_tensorflow(method = "conda",
+                                   envname = "r-tensorflow")
   } else {
     reticulate::use_condaenv("r-tensorflow")
 
     if (!reticulate::py_module_available("tensorflow")) {
-      tensorflow::install_tensorflow()
+      tensorflow::install_tensorflow(method = "conda",
+                                     envname = "r-tensorflow")
     }
   }
+
+  tensorflow::use_compat(version = "v1")
 }

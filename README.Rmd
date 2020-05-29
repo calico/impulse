@@ -74,7 +74,7 @@ The primary functionality in this package is fitting parametric models to user-s
 
 ### Formulating priors
 
-The most important contribution of this work is aaplying priors to impulse models since there are natural constraints on parameter values which should hold (non-negative rates, non-negative times, rise before fall). When these constraints are violated, a good fit may occur, but interpretability of timing and effect sizes will be lost. The vignette *setting_priors* describes how to formulate the priors and can be used to guide the tuning of parameters for other application.
+The most important contribution of this work is applying priors to impulse models since there are natural constraints on parameter values which should hold (non-negative rates, non-negative times, rise before fall). When these constraints are violated, a good fit may occur, but interpretability of timing and effect sizes will be lost. The vignette *setting_priors* describes how to formulate the priors and can be used to guide the tuning of parameters for other application.
 
 ## Installation
 
