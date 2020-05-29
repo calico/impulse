@@ -37,6 +37,7 @@
 #' library(dplyr)
 #' auto_config_tf()
 #'
+#' set.seed(123)
 #' timecourses <- simulate_timecourses(n = 2)
 #'
 #' timecourses %>%

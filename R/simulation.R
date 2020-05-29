@@ -30,6 +30,7 @@ simulate_timecourses <-
 
   model_parameters <- tibble::tibble(model = c("sigmoid", "impulse"),
                                      n = c(model_counts)) %>%
+    dplyr::filter(n > 0) %>%
     dplyr::mutate(model_pars = purrr::map2(n, model,
                                            simulate_parameters,
                                            prior_pars)) %>%
@@ -73,9 +74,13 @@ simulate_parameters <-
             alpha = 0.01) {
 
   stopifnot(class(n) %in% c("numeric", "integer"),
-            n >= 1)
+            n >= 0)
 
   validate_priors(model, prior_pars)
+
+  if (n == 0) {
+    return (NULL)
+  }
 
   if (model %in% c("sigmoid", "impulse")) {
     v_inter <- rnorm_just_tails(n,
