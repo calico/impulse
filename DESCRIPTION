@@ -7,7 +7,7 @@ Authors@R: person(given = "Sean", family = "Hackett",
 Author: Sean Hackett [aut, cre]
 Maintainer: Sean Hackett <sean@calicolabs.com>
 Description: Implements the phenomenological kinetic model of Chechik and Koller using
-  Bayesian priors to facilitate interpretability. Two models can be fit: a sigmoidal model parameterized
+  Bayesian priors to improve interpretability. Two models can be fit: a sigmoidal model parameterized
   by a half-max time constant, an asymptote and a rate constant, as well as an impulse model which adds
   a second sigmoidal response described by a second time constant and asymptote. Priors enforce
   non-negativity of timing and rate coefficients and with appropriate tuning, focus support on feasible
@@ -33,4 +33,4 @@ Suggests:
     rmarkdown,
     gridExtra
 VignetteBuilder: knitr
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0

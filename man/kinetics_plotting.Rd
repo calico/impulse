@@ -4,8 +4,12 @@
 \alias{kinetics_plotting}
 \title{Kinetics plotting}
 \usage{
-kinetics_plotting(augmented_timecourses, saturation = 0.9, max_time,
-  fit_timepoints = 100)
+kinetics_plotting(
+  augmented_timecourses,
+  saturation = 0.9,
+  max_time,
+  fit_timepoints = 100
+)
 }
 \arguments{
 \item{augmented_timecourses}{Tibble with one row per timecourse and containing measurements &/or fitted kinetics to plot.}

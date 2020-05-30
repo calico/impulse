@@ -4,8 +4,12 @@
 \alias{fit_timecourse}
 \title{Fit timecourse}
 \usage{
-fit_timecourse(timecourse_parameters, timepts = seq(0, 90, by = 1),
-  model = "sigmoid", fit.label = "fit")
+fit_timecourse(
+  timecourse_parameters,
+  timepts = seq(0, 90, by = 1),
+  model = "sigmoid",
+  fit.label = "fit"
+)
 }
 \arguments{
 \item{timecourse_parameters}{a one row tibble containing each kinetic parameter as a separate column.}

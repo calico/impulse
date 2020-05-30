@@ -4,10 +4,15 @@
 \alias{estimate_timecourse_params_tf}
 \title{Fit Timecourses}
 \usage{
-estimate_timecourse_params_tf(measurements, model = "sigmoid",
-  n_initializations = 100, use_prior = TRUE, prior_pars = c(v_sd =
-  1.2, rate_shape = 2, rate_scale = 0.25, time_shape = 2, time_scale = 15),
-  verbose = FALSE)
+estimate_timecourse_params_tf(
+  measurements,
+  model = "sigmoid",
+  n_initializations = 100,
+  use_prior = TRUE,
+  prior_pars = c(v_sd = 1.2, rate_shape = 2, rate_scale = 0.25, time_shape = 2,
+    time_scale = 15),
+  verbose = FALSE
+)
 }
 \arguments{
 \item{measurements}{a tibble containing:
@@ -56,6 +61,7 @@ Fit Timecourses
 library(dplyr)
 auto_config_tf()
 
+set.seed(123)
 timecourses <- simulate_timecourses(n = 2)
 
 timecourses \%>\%

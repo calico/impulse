@@ -63,7 +63,10 @@ estimate_timecourse_params_tf <-
     stop('The "tensorflow" package must be installed to use this function',
          call. = FALSE)
   } else {
-    tensorflow::use_compat(version = "v1")
+    # use the v1 tensorflow api
+    tf_v1_compatibility()
+    # import probability module
+    tfp <- reticulate::import("tensorflow_probability")
   }
 
   stopifnot("data.frame" %in% class(measurements))
@@ -114,33 +117,33 @@ estimate_timecourse_params_tf <-
 
     if (use_prior) {
       v_inter <- tf$Variable(
-        tf$random_normal(shape(n_initializations),
+        tf$random$normal(shape(n_initializations),
                          mean = 0,
                          stddev = prior_pars["v_sd"]),
         name = "v_inter")
       t_rise <- tf$Variable(
-        tf$random_gamma(shape(n_initializations),
+        tf$random$gamma(shape(n_initializations),
                         alpha = prior_pars["time_shape"],
                         beta = 1 / prior_pars["time_scale"]),
         name = "t_rise")
       rate <- tf$Variable(
-        tf$random_gamma(shape(n_initializations),
+        tf$random$gamma(shape(n_initializations),
                         alpha = prior_pars["rate_shape"],
                         beta = 1 / prior_pars["rate_scale"]),
         name = "rate")
     } else {
       v_inter <- tf$Variable(
-        tf$random_normal(shape(n_initializations),
+        tf$random$normal(shape(n_initializations),
                          mean = 0,
                          stddev = initialization_pars["v_sd"]),
         name = "v_inter")
       t_rise <- tf$Variable(
-        tf$random_uniform(shape(n_initializations),
+        tf$random$uniform(shape(n_initializations),
                           0,
                           initialization_pars["t_max"]),
         name = "t_rise")
       rate <- tf$Variable(
-        tf$random_uniform(shape(n_initializations),
+        tf$random$uniform(shape(n_initializations),
                           0,
                           1),
         name = "rate")
@@ -154,23 +157,23 @@ estimate_timecourse_params_tf <-
 
     if (use_prior) {
       v_final <- tf$Variable(
-        tf$random_normal(shape(n_initializations),
+        tf$random$normal(shape(n_initializations),
                          mean = 0,
                          stddev = prior_pars["v_sd"]),
         name = "v_final")
       t_diff <- tf$Variable(
-        tf$random_gamma(shape(n_initializations),
+        tf$random$gamma(shape(n_initializations),
                         alpha = prior_pars["time_shape"],
                         beta = 1 / prior_pars["time_scale"]),
         name = "t_diff")
     } else {
       v_final <- tf$Variable(
-        tf$random_normal(shape(n_initializations),
+        tf$random$normal(shape(n_initializations),
                          mean = 0,
                          stddev = initialization_pars["v_sd"]),
         name = "v_final")
       t_diff <- tf$Variable(
-        tf$random_uniform(shape(n_initializations),
+        tf$random$uniform(shape(n_initializations),
                           0,
                           initialization_pars["t_max"]),
         name = "t_diff")
@@ -183,10 +186,10 @@ estimate_timecourse_params_tf <-
   # Setup model
 
   # data
-  timepts <- tf$placeholder(tf$float32,
+  timepts <- tf$compat$v1$placeholder(tf$float32,
                             shape(NULL, n_initializations),
                             name = "time")
-  expression <- tf$placeholder(tf$float32,
+  expression <- tf$compat$v1$placeholder(tf$float32,
                                shape(NULL, n_initializations),
                                name = "measured_expression")
 
@@ -225,12 +228,12 @@ estimate_timecourse_params_tf <-
   # Setup priors
 
   if (use_prior) {
-    v_prior <- tf$contrib$distributions$Normal(loc = 0,
-                                               scale = prior_pars["v_sd"])
-    rate_prior <- tf$contrib$distributions$Gamma(
+    v_prior <- tfp$distributions$Normal(loc = 0,
+                                       scale = prior_pars["v_sd"])
+    rate_prior <- tfp$distributions$Gamma(
       concentration = prior_pars["rate_shape"],
       rate = 1 / prior_pars["rate_scale"])
-    time_prior <- tf$contrib$distributions$Gamma(
+    time_prior <- tfp$distributions$Gamma(
       concentration = prior_pars["time_shape"],
       rate = 1 / prior_pars["time_scale"])
 
@@ -256,12 +259,12 @@ estimate_timecourse_params_tf <-
                                        axis = 0L,
                                        name = "MSE")
 
-  optimizer <- tf$train$AdamOptimizer(0.01)
+  optimizer <- tf$compat$v1$train$AdadeltaOptimizer(0.01)
 
   if (use_prior) {
     # minimize normal likelihood with priors
-    norm_target <- tf$contrib$distributions$Normal(loc = expression,
-                                                   scale = 0.1)
+    norm_target <- tfp$distributions$Normal(loc = expression,
+                                           scale = 0.1)
     normal_logLik <- tf$reduce_sum(norm_target$log_prob(fit_expression),
                                    axis = 0L, name = "normal_logLik")
     logPr <- tf$subtract(0, tf$add(normal_logLik, model_log_pr))
@@ -272,7 +275,7 @@ estimate_timecourse_params_tf <-
     # minimize SS error
     loss <- tf$reduce_sum(mean_squared_error, name = "reduce_MSE")
   }
-  train <- optimizer$minimize(loss, name = "train")
+  train <- optimizer$minimize(loss = loss, name = "train")
 
   all_timecourse_fits <- list()
   entry_number <- 0
@@ -295,9 +298,9 @@ estimate_timecourse_params_tf <-
                                                 nrow = nrow(one_timecourse),
                                                 ncol = n_initializations))
 
-    sess <- tf$Session()
+    sess <- tf$compat$v1$Session()
     # initialize parameters
-    sess$run(tf$global_variables_initializer())
+    sess$run(tf$compat$v1$global_variables_initializer())
 
     # keep track of initialization for error checking
     initial_vals <- lapply(parameters,

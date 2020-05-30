@@ -62,15 +62,25 @@ auto_config_tf <- function () {
   if ("character" %in% class(conda_envs) ||
       !("r-tensorflow" %in% conda_envs$name)) {
     tensorflow::install_tensorflow(method = "conda",
-                                   envname = "r-tensorflow")
+                                   envname = "r-tensorflow",
+                                   extra_packages = "tensorflow-probability")
   } else {
     reticulate::use_condaenv("r-tensorflow")
 
     if (!reticulate::py_module_available("tensorflow")) {
       tensorflow::install_tensorflow(method = "conda",
-                                     envname = "r-tensorflow")
+                                     envname = "r-tensorflow",
+                                     extra_packages = "tensorflow-probability")
     }
   }
 
-  tensorflow::use_compat(version = "v1")
+  tf_v1_compatibility()
+}
+
+tf_v1_compatibility <- function () {
+
+  library(tensorflow)
+  #tensorflow::use_compat(version = "v1")
+  tf$compat$v1$disable_eager_execution()
+
 }
