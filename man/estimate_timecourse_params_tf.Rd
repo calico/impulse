@@ -65,9 +65,9 @@ set.seed(123)
 timecourses <- simulate_timecourses(n = 2)
 
 timecourses \%>\%
-  tidyr::unnest(measurements) \%>\%
+  tidyr::unnest_legacy(measurements) \%>\%
   # separate by true model
-  tidyr::nest(-true_model, .key = "measurements") \%>\%
+  tidyr::nest_legacy(-true_model, .key = "measurements") \%>\%
   # fit all models to each timecourse
   tidyr::crossing(tibble::tibble(model = c("sigmoid", "impulse"))) \%>\%
   dplyr::mutate(timecourse_params = purrr::map2(measurements, model,

@@ -56,7 +56,7 @@ kinetics_plotting <- function(augmented_timecourses,
 
     fitted_kinetics <- augmented_timecourses %>%
       dplyr::select(tc_id, best_model, fitted_kinetics) %>%
-      tidyr::unnest(fitted_kinetics)
+      tidyr::unnest_legacy(fitted_kinetics)
 
     timepoints <- seq(from = 0, max_time, length.out = fit_timepoints)
     fitted_values <- fitted_kinetics %>%
@@ -65,7 +65,7 @@ kinetics_plotting <- function(augmented_timecourses,
       dplyr::mutate(fitted_timecourses = purrr::map2(parameters, model,
                                                      fit_timecourse,
                                                      timepts = timepoints)) %>%
-      tidyr::unnest(fitted_timecourses) %>%
+      tidyr::unnest_legacy(fitted_timecourses) %>%
       dplyr::mutate(best_model = ifelse(model == best_model, TRUE, FALSE))
 
     # calculate saturation interval

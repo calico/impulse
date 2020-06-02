@@ -35,7 +35,7 @@ simulate_timecourses <-
                                            simulate_parameters,
                                            prior_pars)) %>%
     dplyr::select(-n) %>%
-    tidyr::unnest(model_pars)
+    tidyr::unnest_legacy(model_pars)
 
   model_parameters %>%
     tidyr::nest_legacy(-tc_id, -model, .key = "params") %>%
