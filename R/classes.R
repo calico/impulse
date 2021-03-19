@@ -49,7 +49,7 @@ validate_priors <- function (model, prior_pars) {
   stopifnot(prior_pars["time_scale"] > 0)
 }
 
-#' Auto Configurate TensforFlow
+#' Auto Configure TensforFlow
 #'
 #' Load and install the r-tensorflow conda environment (python / tensorflow
 #' can be setup in other ways with reticulate).
@@ -63,15 +63,21 @@ auto_config_tf <- function () {
       !("r-tensorflow" %in% conda_envs$name)) {
     tensorflow::install_tensorflow(method = "conda",
                                    envname = "r-tensorflow",
+                                   version = 2.4,
                                    extra_packages = "tensorflow-probability")
   } else {
-    reticulate::use_condaenv("r-tensorflow")
+    reticulate::use_condaenv("r-tensorflow", required = TRUE)
 
     if (!reticulate::py_module_available("tensorflow")) {
       tensorflow::install_tensorflow(method = "conda",
                                      envname = "r-tensorflow",
+                                     version = 2.4,
                                      extra_packages = "tensorflow-probability")
     }
+  }
+
+  if (!reticulate::py_module_available("tensorflow")) {
+    stop ("TensorFlow was not foound after installation")
   }
 
   tf_v1_compatibility()
