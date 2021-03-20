@@ -34,6 +34,7 @@
 #' @examples
 #'
 #' library(dplyr)
+#' library(tensorflow)
 #' auto_config_tf()
 #'
 #' set.seed(123)

@@ -60,15 +60,18 @@ jobs:
             ./Miniconda3-latest-Windows-x86_64.exe //InstallationType=JustMe //RegisterPython=0 //S
           fi
 
-      - name: Setup paths
+      - name: Add conda paths
         shell: bash
         run: |
-          echo 'unset SUDO_UID SUDO_GID SUDO_USER' >> $GITHUB_ENV
-
           echo "::add-path::$HOME/miniconda3/bin"
           echo "::add-path::$HOME/miniconda3/Scripts"
+          sudo chmod 777 -R $HOME/miniconda3
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
+      - name:
+        run: unset SUDO_UID SUDO_GID SUDO_USER
+        shell: bash
 
       - uses: actions/checkout@v2
 

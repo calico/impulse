@@ -17,6 +17,7 @@ library(purrr)
 theme_set(theme_bw() + theme(text = element_text(size = 15)))
 
 library(impulse)
+library(tensorflow)
 auto_config_tf()
 
 n_tcs <- 20
