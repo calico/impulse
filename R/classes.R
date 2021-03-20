@@ -80,8 +80,6 @@ auto_config_tf <- function (conda_env = "r-tensorflow") {
   if (!reticulate::py_module_available("tensorflow")) {
     stop ("TensorFlow was not found after installation. This may be because the conda path was not found")
   }
-
-  tf_v1_compatibility()
 }
 
 tf_install <- function (conda_env) {
@@ -92,14 +90,5 @@ tf_install <- function (conda_env) {
                                  envname = conda_env,
                                  version = 2.4,
                                  extra_packages = "tensorflow-probability")
-
-}
-
-tf_v1_compatibility <- function () {
-
-  if (!"tensorflow" %in% (.packages())) {
-    stop ("The \"tensorflow\" package is not loaded. Please load it by calling \"library(tensorflow)\" before proceeding")
-  }
-  tf$compat$v1$disable_eager_execution()
 
 }
