@@ -66,22 +66,26 @@ auto_config_tf <- function (conda_env = "r-tensorflow") {
   if ("character" %in% class(conda_envs) ||
       !(conda_env %in% conda_envs$name)) {
     # if no environment exists then create a conda environment w/ TF
-    tensorflow::install_tensorflow(method = "conda",
-                                   envname = conda_env,
-                                   version = 2.4,
-                                   extra_packages = "tensorflow-probability")
+    tf_install(conda_env)
   } else {
     # load a conda environment and install TF if needed
     reticulate::use_condaenv(conda_env, required = TRUE)
     if (!reticulate::py_module_available("tensorflow")) {
-      tensorflow::install_tensorflow(method = "conda",
-                                     envname = conda_env,
-                                     version = 2.4,
-                                     extra_packages = "tensorflow-probability")
+      tf_install(conda_env)
     }
   }
 
   reticulate::use_condaenv(conda_env, required = TRUE)
+
+  print("discover config")
+  print(reticulate::py_discover_config())
+
+  print("config")
+  print(reticulate::py_config())
+
+  print("envs")
+  print(reticulate::conda_list())
+
   if (!reticulate::py_module_available("tensorflow")) {
     stop ("TensorFlow was not found after installation. This may be because the conda path was not found")
   }
@@ -89,10 +93,19 @@ auto_config_tf <- function (conda_env = "r-tensorflow") {
   tf_v1_compatibility()
 }
 
+tf_install <- function (conda_env) {
+
+  print(paste0("Installing Tensorflow in the ", conda_env, " conda environemnt"))
+
+  tensorflow::install_tensorflow(method = "conda",
+                                 envname = conda_env,
+                                 version = 2.4,
+                                 extra_packages = "tensorflow-probability")
+
+}
+
 tf_v1_compatibility <- function () {
 
-  library(tensorflow)
-  #tensorflow::use_compat(version = "v1")
   tf$compat$v1$disable_eager_execution()
 
 }

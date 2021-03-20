@@ -33,7 +33,6 @@
 #'
 #' @examples
 #'
-#' \dontrun{
 #' library(dplyr)
 #' auto_config_tf()
 #'
@@ -49,7 +48,6 @@
 #'   dplyr::mutate(timecourse_params = purrr::map2(measurements, model,
 #'                                     estimate_timecourse_params_tf,
 #'                                     n_initializations = 25))
-#' }
 #'
 #' @export
 estimate_timecourse_params_tf <-
