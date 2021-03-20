@@ -77,18 +77,18 @@ auto_config_tf <- function (conda_env = "r-tensorflow") {
 
   reticulate::use_condaenv(conda_env, required = TRUE)
 
-  print("discover config")
-  print(reticulate::py_discover_config())
+  message("discover config")
+  message(reticulate::py_discover_config())
 
-  print("config")
-  print(reticulate::py_config())
+  message("config")
+  message(reticulate::py_config())
 
-  print("envs")
-  print(reticulate::conda_list())
+  message("envs")
+  message(reticulate::conda_list())
 
-  if (!reticulate::py_module_available("tensorflow")) {
-    stop ("TensorFlow was not found after installation. This may be because the conda path was not found")
-  }
+  #if (!reticulate::py_module_available("tensorflow")) {
+  #  stop ("TensorFlow was not found after installation. This may be because the conda path was not found")
+  #}
 
   tf_v1_compatibility()
 }
