@@ -35,7 +35,7 @@ jobs:
           - {os: ubuntu-18.04,   r: '3.5',     rspm: "https://packagemanager.rstudio.com/cran/__linux__/bionic/latest"}
           - {os: ubuntu-18.04,   r: '3.4',     rspm: "https://packagemanager.rstudio.com/cran/__linux__/bionic/latest"}
           - {os: ubuntu-18.04,   r: '3.3',     rspm: "https://packagemanager.rstudio.com/cran/__linux__/bionic/latest"}
-        python-version: ["3.7", "2.7"]
+        python-version: ["3.7"]
 
     env:
       RSPM: ${{ matrix.config.rspm }}
@@ -47,6 +47,7 @@ jobs:
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
+          activate-environment: r-tensorflow
 
       - name: Conda info
         shell: bash -l {0}

@@ -54,30 +54,36 @@ validate_priors <- function (model, prior_pars) {
 #' Load and install the r-tensorflow conda environment (python / tensorflow
 #' can be setup in other ways with reticulate).
 #'
+#' @param conda_env Conda environment name
+#'
 #' @export
-auto_config_tf <- function () {
+auto_config_tf <- function (conda_env = "r-tensorflow") {
+
+  stopifnot(class(conda_env) == "character", length(conda_env) == 1)
 
   conda_envs <- reticulate::conda_list()
 
   if ("character" %in% class(conda_envs) ||
-      !("r-tensorflow" %in% conda_envs$name)) {
+      !(conda_env %in% conda_envs$name)) {
+    # if no environment exists then create a conda environment w/ TF
     tensorflow::install_tensorflow(method = "conda",
-                                   envname = "r-tensorflow",
+                                   envname = conda_env,
                                    version = 2.4,
                                    extra_packages = "tensorflow-probability")
   } else {
-    reticulate::use_condaenv("r-tensorflow", required = TRUE)
-
+    # load a conda environment and install TF if needed
+    reticulate::use_condaenv(conda_env, required = TRUE)
     if (!reticulate::py_module_available("tensorflow")) {
       tensorflow::install_tensorflow(method = "conda",
-                                     envname = "r-tensorflow",
+                                     envname = conda_env,
                                      version = 2.4,
                                      extra_packages = "tensorflow-probability")
     }
   }
 
+  reticulate::use_condaenv(conda_env, required = TRUE)
   if (!reticulate::py_module_available("tensorflow")) {
-    stop ("TensorFlow was not foound after installation")
+    stop ("TensorFlow was not found after installation. This may be because the conda path was not found")
   }
 
   tf_v1_compatibility()
