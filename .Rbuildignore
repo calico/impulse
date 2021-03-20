@@ -7,3 +7,5 @@
 ^impulse_1
 miniconda.sh
 ^\.github$
+^CRAN-RELEASE$
+^cran-comments\.md$
