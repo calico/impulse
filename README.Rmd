@@ -18,16 +18,14 @@ knitr::opts_chunk$set(
 
 # Impulse
 
-[![Travis-CI Build Status](https://travis-ci.org/calico/impulse.svg?branch=master)](https://travis-ci.org/calico/impulse)
-
-This package implements the [Chechik & Koller](https://www.ncbi.nlm.nih.gov/pubmed/19193146) impulse model using TensorFlow to improve scaleability and allow for the introduction of priors which improve model interpretability. This model describes timeseries data using two sigmoidal responses which are sufficient to capture the dynamics of many biological systems. While this model was formulated to capture biological dynamics, the model is generally suitable for any kind of saturation behavior described by half-max value(s) and asymptote(s).
+This package implements the [Chechik & Koller](https://www.ncbi.nlm.nih.gov/pubmed/19193146) impulse model using TensorFlow to improve scaleability and allow for the introduction of priors which improve model interpretability. This model describes timeseries data using two sigmoidal responses which are sufficient to capture the dynamics of many biological perturbations. While this model was formulated to capture biological dynamics, the model is generally suitable for any kind of saturation behavior described by half-max value(s) and asymptote(s).
 
 The core functionality of **impulse** is:
 
-- simulate timecourse parameters and resulting timecourses
-- fit sigmoid and impulse models to timecourses with or without priors on kinetic parameters
-- compare sigmoid and impulse models
-- visualize measurements and parametric fits
+- Simulate timecourse parameters and resulting timecourses
+- Fit sigmoid and impulse models to timecourses with or without priors on kinetic parameters
+- Compare sigmoid and impulse models
+- Visualize measurements and parametric fits
 
 ## The models
 
@@ -79,8 +77,6 @@ The most important contribution of this work is applying priors to impulse model
 ## Installation
 
 The package utilizes TensorFlow for parameter fitting so a python distribution is required for use. This can be configured using any of the methods discussed in [R-TensorFlow](https://github.com/rstudio/tensorflow), but using Conda (e.g., [Miniconda](https://docs.conda.io/en/latest/miniconda.html)) is most straight-forward to configure.
-
-is under active development though and the latest set of features can be obtained by installing from this repository using `devtools`
 
 ```{r, eval=FALSE}
 # install.packages("devtools")

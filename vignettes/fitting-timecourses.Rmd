@@ -9,6 +9,10 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/calico/impulse/workflows/R-CMD-check/badge.svg)](https://github.com/calico/impulse/actions)
+<!-- badges: end -->
+
 ```{r setup}
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(ggplot2))
@@ -17,9 +21,10 @@ library(purrr)
 theme_set(theme_bw() + theme(text = element_text(size = 15)))
 
 library(impulse)
+library(tensorflow)
 auto_config_tf()
 
-n_tcs = 20
+n_tcs <- 20
 ```
 
 ## Overview

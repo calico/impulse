@@ -103,8 +103,8 @@ gamma_densities <- lapply(shape_scale_ratio, function(a_shape_scale_ratio) {
   shape = sqrt(shape_scale_prod) * sqrt(a_shape_scale_ratio)
   scale = sqrt(shape_scale_prod) / sqrt(a_shape_scale_ratio)
   tibble::tibble(beta = betas, 
-             shape_scale = paste(round(shape, 3), round(scale, 3), sep = "-"),
-             density = dgamma(betas, shape = shape, scale = scale))
+                 shape_scale = paste(round(shape, 3), round(scale, 3), sep = "-"),
+                 density = dgamma(betas, shape = shape, scale = scale))
 }) %>%
   dplyr::bind_rows()
 

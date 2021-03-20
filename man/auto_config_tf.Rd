@@ -2,9 +2,12 @@
 % Please edit documentation in R/classes.R
 \name{auto_config_tf}
 \alias{auto_config_tf}
-\title{Auto Configurate TensforFlow}
+\title{Auto Configure TensforFlow}
 \usage{
-auto_config_tf()
+auto_config_tf(conda_env = "r-tensorflow")
+}
+\arguments{
+\item{conda_env}{Conda environment name}
 }
 \description{
 Load and install the r-tensorflow conda environment (python / tensorflow

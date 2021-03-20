@@ -57,8 +57,8 @@ Fit Timecourses
 }
 \examples{
 
-\dontrun{
 library(dplyr)
+library(impulse)
 auto_config_tf()
 
 set.seed(123)
@@ -71,8 +71,7 @@ timecourses \%>\%
   # fit all models to each timecourse
   tidyr::crossing(tibble::tibble(model = c("sigmoid", "impulse"))) \%>\%
   dplyr::mutate(timecourse_params = purrr::map2(measurements, model,
-                                    estimate_timecourse_params_tf,
-                                    n_initializations = 25))
-}
+                                      estimate_timecourse_params_tf,
+                                      n_initializations = 50))
 
 }

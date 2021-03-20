@@ -6,3 +6,4 @@
 .travis.yml
 ^impulse_1
 miniconda.sh
+^\.github$

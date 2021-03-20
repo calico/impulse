@@ -3,14 +3,15 @@ Title: Fit Impulse and Sigmoidal Curves to Longitudinal Data Using TensorFlow
 Version: 1.0.1
 Authors@R: person(given = "Sean", family = "Hackett",
            role = c("aut", "cre"),
-           email = "sean@calicolabs.com")
+           email = "sean@calicolabs.com",
+           comment = c(ORCID = "0000-0002-9553-4341"))
 Author: Sean Hackett [aut, cre]
 Maintainer: Sean Hackett <sean@calicolabs.com>
-Description: Implements the phenomenological kinetic model of Chechik and Koller using
+Description: Implements the phenomenological kinetic model of Chechik and Koller <doi:10.1089/cmb.2008.13TT> using
   Bayesian priors to improve interpretability. Two models can be fit: a sigmoidal model parameterized
   by a half-max time constant, an asymptote and a rate constant, as well as an impulse model which adds
   a second sigmoidal response described by a second time constant and asymptote. Priors enforce
-  non-negativity of timing and rate coefficients and with appropriate tuning, focus support on feasible
+  non-negativity of timing and rate coefficients and with appropriate tuning, focus support on plausible
   parameter ranges. TensorFlow is used to optimize the maximum posterior estimate (MAP) as a combination
   of a non-linear least squares likelihood and priors on kinetic coefficients.
 License: MIT + file LICENSE
@@ -33,4 +34,4 @@ Suggests:
     rmarkdown,
     gridExtra
 VignetteBuilder: knitr
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1

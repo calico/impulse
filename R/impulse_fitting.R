@@ -33,8 +33,8 @@
 #'
 #' @examples
 #'
-#' \dontrun{
 #' library(dplyr)
+#' library(impulse)
 #' auto_config_tf()
 #'
 #' set.seed(123)
@@ -47,9 +47,8 @@
 #'   # fit all models to each timecourse
 #'   tidyr::crossing(tibble::tibble(model = c("sigmoid", "impulse"))) %>%
 #'   dplyr::mutate(timecourse_params = purrr::map2(measurements, model,
-#'                                     estimate_timecourse_params_tf,
-#'                                     n_initializations = 25))
-#' }
+#'                                       estimate_timecourse_params_tf,
+#'                                       n_initializations = 50))
 #'
 #' @export
 estimate_timecourse_params_tf <-
@@ -64,7 +63,7 @@ estimate_timecourse_params_tf <-
          call. = FALSE)
   } else {
     # use the v1 tensorflow api
-    tf_v1_compatibility()
+    tf$compat$v1$disable_eager_execution()
     # import probability module
     tfp <- reticulate::import("tensorflow_probability")
   }
@@ -82,7 +81,7 @@ estimate_timecourse_params_tf <-
 
   stopifnot(length(n_initializations) == 1,
             class(n_initializations) %in% c("numeric", "integer"),
-            n_initializations > 20)
+            n_initializations >= 20)
   n_initializations <- as.integer(n_initializations)
 
   stopifnot(length(use_prior) == 1,
@@ -334,7 +333,7 @@ estimate_timecourse_params_tf <-
       if (sum(!is.nan(current_losses)) < pmin(10, n_initializations)) {
         warning("reinitializing due to too few valid parameter sets\n")
         # if too few parameter sets are valid, reinitialize all parameters
-        sess$run(tf$global_variables_initializer())
+        sess$run(tf$compat$v1$global_variables_initializer())
 
         # keep track of initialization for error checking
         initial_vals <- lapply(parameters,

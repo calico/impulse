@@ -49,38 +49,46 @@ validate_priors <- function (model, prior_pars) {
   stopifnot(prior_pars["time_scale"] > 0)
 }
 
-#' Auto Configurate TensforFlow
+#' Auto Configure TensforFlow
 #'
 #' Load and install the r-tensorflow conda environment (python / tensorflow
 #' can be setup in other ways with reticulate).
 #'
+#' @param conda_env Conda environment name
+#'
 #' @export
-auto_config_tf <- function () {
+auto_config_tf <- function (conda_env = "r-tensorflow") {
+
+  stopifnot(class(conda_env) == "character", length(conda_env) == 1)
 
   conda_envs <- reticulate::conda_list()
 
   if ("character" %in% class(conda_envs) ||
-      !("r-tensorflow" %in% conda_envs$name)) {
-    tensorflow::install_tensorflow(method = "conda",
-                                   envname = "r-tensorflow",
-                                   extra_packages = "tensorflow-probability")
+      !(conda_env %in% conda_envs$name)) {
+    # if no environment exists then create a conda environment w/ TF
+    tf_install(conda_env)
   } else {
-    reticulate::use_condaenv("r-tensorflow")
-
+    # load a conda environment and install TF if needed
+    reticulate::use_condaenv(conda_env, required = TRUE)
     if (!reticulate::py_module_available("tensorflow")) {
-      tensorflow::install_tensorflow(method = "conda",
-                                     envname = "r-tensorflow",
-                                     extra_packages = "tensorflow-probability")
+      tf_install(conda_env)
     }
   }
 
-  tf_v1_compatibility()
+  reticulate::use_condaenv(conda_env, required = TRUE)
+
+  if (!reticulate::py_module_available("tensorflow")) {
+    stop ("TensorFlow was not found after installation. This may be because the conda path was not found")
+  }
 }
 
-tf_v1_compatibility <- function () {
+tf_install <- function (conda_env) {
 
-  library(tensorflow)
-  #tensorflow::use_compat(version = "v1")
-  tf$compat$v1$disable_eager_execution()
+  print(paste0("Installing Tensorflow in the ", conda_env, " conda environemnt"))
+
+  tensorflow::install_tensorflow(method = "conda",
+                                 envname = conda_env,
+                                 version = 2.4,
+                                 extra_packages = "tensorflow-probability")
 
 }
