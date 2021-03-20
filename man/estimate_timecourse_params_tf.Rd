@@ -59,7 +59,6 @@ Fit Timecourses
 
 library(dplyr)
 library(impulse)
-library(tensorflow)
 auto_config_tf()
 
 set.seed(123)
@@ -73,6 +72,6 @@ timecourses \%>\%
   tidyr::crossing(tibble::tibble(model = c("sigmoid", "impulse"))) \%>\%
   dplyr::mutate(timecourse_params = purrr::map2(measurements, model,
                                       estimate_timecourse_params_tf,
-                                      n_initializations = 5))
+                                      n_initializations = 50))
 
 }
