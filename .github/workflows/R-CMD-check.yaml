@@ -20,7 +20,7 @@ jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
 
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }} ${{ matrix.python-version }})
+    name: ${{ matrix.config.os }} (R ${{ matrix.config.r }}, python ${{ matrix.python-version }})
 
     strategy:
       fail-fast: false
@@ -43,15 +43,28 @@ jobs:
 
     steps:
 
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          auto-update-conda: true
-          python-version: ${{ matrix.python-version }}
-          activate-environment: r-tensorflow
+      - name: Install Miniconda
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" = "Linux" ]]; then
+            MINICONDA_FILENAME=Miniconda3-latest-Linux-x86_64.sh
+            curl -o $MINICONDA_FILENAME "https://repo.continuum.io/miniconda/$MINICONDA_FILENAME"
+            bash ${MINICONDA_FILENAME} -b -f -p $HOME/miniconda3
+          elif [[ "${{ runner.os }}" = "macOS" ]]; then
+            MINICONDA_FILENAME=Miniconda3-latest-MacOSX-x86_64.sh
+            curl -o $MINICONDA_FILENAME "https://repo.continuum.io/miniconda/$MINICONDA_FILENAME"
+            bash ${MINICONDA_FILENAME} -b -f -p $HOME/miniconda3
+          elif [[ "${{ runner.os }}" = "Windows" ]]; then
+            MINICONDA_FILENAME=Miniconda3-latest-Windows-x86_64.exe
+            curl -o $MINICONDA_FILENAME "https://repo.continuum.io/miniconda/$MINICONDA_FILENAME"
+            ./Miniconda3-latest-Windows-x86_64.exe //InstallationType=JustMe //RegisterPython=0 //S
+          fi
 
-      - name: Conda info
-        shell: bash -l {0}
-        run: conda info
+      - name: Setup paths
+        shell: bash
+        run: |
+          echo "::add-path::$HOME/miniconda3/bin"
+          echo "::add-path::$HOME/miniconda3/Scripts"
 
       - uses: actions/checkout@v2
 
