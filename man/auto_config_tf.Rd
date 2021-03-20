@@ -2,7 +2,7 @@
 % Please edit documentation in R/classes.R
 \name{auto_config_tf}
 \alias{auto_config_tf}
-\title{Auto Configurate TensforFlow}
+\title{Auto Configure TensforFlow}
 \usage{
 auto_config_tf()
 }
