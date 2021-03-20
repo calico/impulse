@@ -63,6 +63,8 @@ jobs:
       - name: Setup paths
         shell: bash
         run: |
+          echo 'unset SUDO_UID SUDO_GID SUDO_USER' >> $GITHUB_ENV
+
           echo "::add-path::$HOME/miniconda3/bin"
           echo "::add-path::$HOME/miniconda3/Scripts"
         env:
