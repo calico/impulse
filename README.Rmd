@@ -76,17 +76,24 @@ The most important contribution of this work is applying priors to impulse model
 
 ## Installation
 
-The package utilizes TensorFlow for parameter fitting so a python distribution is required for use. This can be configured using any of the methods discussed in [R-TensorFlow](https://github.com/rstudio/tensorflow), but using Conda (e.g., [Miniconda](https://docs.conda.io/en/latest/miniconda.html)) is most straight-forward to configure.
+The package can be installed from GitHub using:
 
 ```{r, eval=FALSE}
 # install.packages("devtools")
-devtools::install_github('calico/impulse')
+remotes::install_github('calico/impulse')
 
 # for vignettes
-devtools::install_github('calico/impulse', build = TRUE, build_opts = c("--no-resave-data", "--no-manual"))
+remotes::install_github('calico/impulse', build = TRUE, build_opts = c("--no-resave-data", "--no-manual"))
 ```
 
-Once *impulse* is installed, fast tensorflow configuration with conda can be done by invoking
+The package utilizes TensorFlow for parameter fitting so a python distribution is required for use. This can be configured using any of the methods discussed in [R-TensorFlow](https://github.com/rstudio/tensorflow), but using Conda (e.g., [Miniconda](https://docs.conda.io/en/latest/miniconda.html)) is straight-forward to configure. Conda can be installed using:
+
+```{r, eval = FALSE}
+remotes::install_github('rstudio/reticulate')
+reticulate::install_miniconda()
+```
+
+Once conda and impulse are installed, A conda environment configured with TensorFlow can be created using:
 
 ```{r, eval=FALSE}
 auto_config_tf()
