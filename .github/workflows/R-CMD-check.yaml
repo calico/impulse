@@ -65,6 +65,8 @@ jobs:
         run: |
           echo "::add-path::$HOME/miniconda3/bin"
           echo "::add-path::$HOME/miniconda3/Scripts"
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
       - uses: actions/checkout@v2
 
