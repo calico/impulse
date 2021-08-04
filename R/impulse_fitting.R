@@ -12,6 +12,7 @@
 #'   \item{\code{impulse}: two sigmoidal responses}
 #'   }
 #' @param n_initializations Number of initializations to use for each timecourse.
+#' @param max_n_initializations Maximum number of initializations that can be used
 #' @param use_prior If FALSE, fit least squares. If TRUE, add priors for a MAP estimate.
 #' @param prior_pars Named numeric vector of parameters to use for priors (if use_prior is TRUE)
 #' \itemize{
@@ -46,17 +47,28 @@
 #'   tidyr::nest_legacy(-true_model, .key = "measurements") %>%
 #'   # fit all models to each timecourse
 #'   tidyr::crossing(tibble::tibble(model = c("sigmoid", "impulse"))) %>%
-#'   dplyr::mutate(timecourse_params = purrr::map2(measurements, model,
-#'                                       estimate_timecourse_params_tf,
-#'                                       n_initializations = 50))
+#'   dplyr::mutate(timecourse_params = purrr::map2(
+#'     measurements,
+#'     model,
+#'     estimate_timecourse_params_tf,
+#'     n_initializations = 20
+#'     ))
 #'
 #' @export
-estimate_timecourse_params_tf <-
-  function(measurements, model = "sigmoid", n_initializations = 100,
-           use_prior = TRUE,
-           prior_pars = c("v_sd" = 1.2, "rate_shape" = 2, "rate_scale" = 0.25,
-                          "time_shape" = 2, "time_scale" = 15),
-           verbose = FALSE) {
+estimate_timecourse_params_tf <- function(
+  measurements,
+  model = "sigmoid",
+  n_initializations = 100,
+  max_n_initializations = 1000,
+  use_prior = TRUE,
+  prior_pars = c(
+    "v_sd" = 1.2,
+    "rate_shape" = 2,
+    "rate_scale" = 0.25,
+    "time_shape" = 2,
+    "time_scale" = 15),
+  verbose = FALSE
+  ) {
 
   if (!requireNamespace("tensorflow", quietly = TRUE)) {
     stop('The "tensorflow" package must be installed to use this function',
@@ -76,20 +88,13 @@ estimate_timecourse_params_tf <-
           paste(missing_vars, collapse = ", "))
   }
 
-  stopifnot(length(model) == 1,
-            model %in% c("sigmoid", "impulse"))
 
-  stopifnot(length(n_initializations) == 1,
-            class(n_initializations) %in% c("numeric", "integer"),
-            n_initializations >= 20)
+  checkmate::assertChoice(model, c("sigmoid", "impulse"))
+  checkmate::assertNumber(n_initializations, lower = 10)
   n_initializations <- as.integer(n_initializations)
-
-  stopifnot(length(use_prior) == 1,
-            all(class(use_prior) == "logical"),
-            use_prior %in% c(TRUE, FALSE))
-  stopifnot(length(verbose) == 1,
-            all(class(verbose) == "logical"),
-            verbose %in% c(TRUE, FALSE))
+  checkmate::assertNumber(max_n_initializations, lower = n_initializations)
+  checkmate::assertLogical(use_prior, len = 1)
+  checkmate::assertLogical(verbose, len = 1)
 
   # test parameters supplied for parameter initialization / priors
 
@@ -114,83 +119,36 @@ estimate_timecourse_params_tf <-
   if (model %in% c("sigmoid", "impulse")) {
     # for parameters shared by sigmoid and impulse
 
-    if (use_prior) {
-      v_inter <- tf$Variable(
-        tf$random$normal(shape(n_initializations),
-                         mean = 0,
-                         stddev = prior_pars["v_sd"]),
-        name = "v_inter")
-      t_rise <- tf$Variable(
-        tf$random$gamma(shape(n_initializations),
-                        alpha = prior_pars["time_shape"],
-                        beta = 1 / prior_pars["time_scale"]),
-        name = "t_rise")
-      rate <- tf$Variable(
-        tf$random$gamma(shape(n_initializations),
-                        alpha = prior_pars["rate_shape"],
-                        beta = 1 / prior_pars["rate_scale"]),
-        name = "rate")
-    } else {
-      v_inter <- tf$Variable(
-        tf$random$normal(shape(n_initializations),
-                         mean = 0,
-                         stddev = initialization_pars["v_sd"]),
-        name = "v_inter")
-      t_rise <- tf$Variable(
-        tf$random$uniform(shape(n_initializations),
-                          0,
-                          initialization_pars["t_max"]),
-        name = "t_rise")
-      rate <- tf$Variable(
-        tf$random$uniform(shape(n_initializations),
-                          0,
-                          1),
-        name = "rate")
-    }
-
+    sigmoid_params <- init_sigmoid_parameters(use_prior, n_initializations, prior_pars)
+    v_inter <- sigmoid_params$v_inter
+    t_rise <- sigmoid_params$t_rise
+    rate <- sigmoid_params$rate
     parameters <- c("v_inter", "t_rise", "rate")
   }
 
   if (model == "impulse") {
     # setup impulse specific parameters
 
-    if (use_prior) {
-      v_final <- tf$Variable(
-        tf$random$normal(shape(n_initializations),
-                         mean = 0,
-                         stddev = prior_pars["v_sd"]),
-        name = "v_final")
-      t_diff <- tf$Variable(
-        tf$random$gamma(shape(n_initializations),
-                        alpha = prior_pars["time_shape"],
-                        beta = 1 / prior_pars["time_scale"]),
-        name = "t_diff")
-    } else {
-      v_final <- tf$Variable(
-        tf$random$normal(shape(n_initializations),
-                         mean = 0,
-                         stddev = initialization_pars["v_sd"]),
-        name = "v_final")
-      t_diff <- tf$Variable(
-        tf$random$uniform(shape(n_initializations),
-                          0,
-                          initialization_pars["t_max"]),
-        name = "t_diff")
-    }
-    t_fall <- tf$add(t_rise, t_diff, name = "t_final")
-
+    impulse_params <- init_impulse_parameters(use_prior, n_initializations, prior_pars, t_rise)
+    v_final <- impulse_params$v_final
+    t_diff <- impulse_params$t_diff
+    t_fall <- impulse_params$t_fall
     parameters <- c(parameters, "v_final", "t_fall")
   }
 
   # Setup model
 
   # data
-  timepts <- tf$compat$v1$placeholder(tf$float32,
-                            shape(NULL, n_initializations),
-                            name = "time")
-  expression <- tf$compat$v1$placeholder(tf$float32,
-                               shape(NULL, n_initializations),
-                               name = "measured_expression")
+  timepts <- tf$compat$v1$placeholder(
+    tf$float32,
+    shape(NULL, n_initializations),
+    name = "time"
+    )
+  expression <- tf$compat$v1$placeholder(
+    tf$float32,
+    shape(NULL, n_initializations),
+    name = "measured_expression"
+    )
 
   if (model == "sigmoid") {
     # "v_inter*(1/(1 + exp(-1*rate*(time - t_rise))))"
@@ -278,6 +236,8 @@ estimate_timecourse_params_tf <-
 
   all_timecourse_fits <- list()
   entry_number <- 0
+  current_n_initializations <- n_initializations
+
   for (a_tc_id in unique(measurements$tc_id)) {
     entry_number <- entry_number + 1
 
@@ -292,10 +252,10 @@ estimate_timecourse_params_tf <-
 
     timecourse_dict <- dict(timepts = matrix(one_timecourse$time,
                                              nrow = nrow(one_timecourse),
-                                             ncol = n_initializations),
+                                             ncol = current_n_initializations),
                             expression = matrix(one_timecourse$abundance,
                                                 nrow = nrow(one_timecourse),
-                                                ncol = n_initializations))
+                                                ncol = current_n_initializations))
 
     sess <- tf$compat$v1$Session()
     # initialize parameters
@@ -306,7 +266,7 @@ estimate_timecourse_params_tf <-
                            function(variable){
                              tibble::tibble(
                                variable = variable,
-                               init_id = 1:n_initializations,
+                               init_id = 1:current_n_initializations,
                                value = sess$run(eval(parse(text = variable)))
                                )
                              }) %>%
@@ -330,9 +290,22 @@ estimate_timecourse_params_tf <-
         sess$run(mean_squared_error, feed_dict = timecourse_dict)
       }
 
-      if (sum(!is.nan(current_losses)) < pmin(10, n_initializations)) {
-        warning("reinitializing due to too few valid parameter sets\n")
+      if (sum(!is.nan(current_losses)) < pmin(10, current_n_initializations)) {
+
+        #current_n_initializations <- current_n_initializations * 2
+
+        message(glue::glue(
+          "expanding initialization for tc_id: {a_tc_id} to {current_n_initializations} due to too few valid parameter sets\n"
+          ))
         # if too few parameter sets are valid, reinitialize all parameters
+
+        timecourse_dict <- dict(timepts = matrix(one_timecourse$time,
+                                                 nrow = nrow(one_timecourse),
+                                                 ncol = current_n_initializations),
+                                expression = matrix(one_timecourse$abundance,
+                                                    nrow = nrow(one_timecourse),
+                                                    ncol = current_n_initializations))
+
         sess$run(tf$compat$v1$global_variables_initializer())
 
         # keep track of initialization for error checking
@@ -340,7 +313,7 @@ estimate_timecourse_params_tf <-
                                function(variable){
                                  tibble::tibble(
                                    variable = variable,
-                                   init_id = 1:n_initializations,
+                                   init_id = 1:current_n_initializations,
                                    value = sess$run(
                                      eval(parse(text = variable))
                                      )
@@ -389,7 +362,7 @@ estimate_timecourse_params_tf <-
       parameters,
       function(variable){
         tibble::tibble(variable = variable,
-                       init_id = 1:n_initializations,
+                       init_id = 1:current_n_initializations,
                        value = sess$run(eval(parse(text = variable))))
         }) %>%
       dplyr::bind_rows() %>%
@@ -420,6 +393,110 @@ estimate_timecourse_params_tf <-
     purrr::transpose() %>%
     purrr::map(dplyr::bind_rows)
 }
+
+init_sigmoid_parameters <- function(use_prior, n_initializations, prior_pars = NULL) {
+
+  checkmate::assertLogical(use_prior, len = 1)
+  checkmate::assertNumber(n_initializations, lower = 10)
+
+  if (use_prior) {
+    v_inter <- tf$Variable(
+      tf$random$normal(shape(n_initializations),
+                       mean = 0,
+                       stddev = prior_pars["v_sd"]),
+      name = "v_inter")
+    t_rise <- tf$Variable(
+      tf$random$gamma(shape(n_initializations),
+                      alpha = prior_pars["time_shape"],
+                      beta = 1 / prior_pars["time_scale"]),
+      name = "t_rise")
+    rate <- tf$Variable(
+      tf$random$gamma(shape(n_initializations),
+                      alpha = prior_pars["rate_shape"],
+                      beta = 1 / prior_pars["rate_scale"]),
+      name = "rate")
+  } else {
+    v_inter <- tf$Variable(
+      tf$random$normal(shape(n_initializations),
+                       mean = 0,
+                       stddev = initialization_pars["v_sd"]),
+      name = "v_inter")
+    t_rise <- tf$Variable(
+      tf$random$uniform(shape(n_initializations),
+                        0,
+                        initialization_pars["t_max"]),
+      name = "t_rise")
+    rate <- tf$Variable(
+      tf$random$uniform(shape(n_initializations),
+                        0,
+                        1),
+      name = "rate")
+  }
+
+  return(
+    list(v_inter = v_inter,
+         t_rise = t_rise,
+         rate = rate)
+  )
+}
+
+init_impulse_parameters <- function(use_prior, n_initializations, prior_pars = NULL, t_rise) {
+
+  checkmate::assertLogical(use_prior, len = 1)
+  checkmate::assertNumber(n_initializations, lower = 10)
+
+  if (use_prior) {
+    v_final <- tf$Variable(
+      tf$random$normal(shape(n_initializations),
+                       mean = 0,
+                       stddev = prior_pars["v_sd"]),
+      name = "v_final")
+    t_diff <- tf$Variable(
+      tf$random$gamma(shape(n_initializations),
+                      alpha = prior_pars["time_shape"],
+                      beta = 1 / prior_pars["time_scale"]),
+      name = "t_diff")
+  } else {
+    v_final <- tf$Variable(
+      tf$random$normal(shape(n_initializations),
+                       mean = 0,
+                       stddev = initialization_pars["v_sd"]),
+      name = "v_final")
+    t_diff <- tf$Variable(
+      tf$random$uniform(shape(n_initializations),
+                        0,
+                        initialization_pars["t_max"]),
+      name = "t_diff")
+  }
+  t_fall <- tf$add(t_rise, t_diff, name = "t_final")
+
+  return(
+    list(
+      v_final = v_final,
+      t_diff = t_diff,
+      t_fall = t_fall
+    )
+  )
+}
+
+init_sigmoid_hyperparameters <- function(use_prior, n_initializations, prior_pars = NULL) {
+
+  checkmate::assertLogical(use_prior, len = 1)
+  checkmate::assertNumber(n_initializations, lower = 10)
+  checkmate::assertList(prior_pars)
+
+  return(
+    list(v_inter = v_inter,
+         t_rise = t_rise,
+         rate = rate)
+  )
+}
+
+
+
+
+
+
 
 #' Reduce to best timecourse parameters
 #'
