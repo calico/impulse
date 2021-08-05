@@ -32,8 +32,8 @@ Imports:
     tibble,
     tidyr (>= 1.0)
 Suggests: 
-    gridExtra
+    gridExtra,
     knitr,
-    rmarkdown,
+    rmarkdown
 VignetteBuilder: knitr
 RoxygenNote: 7.1.1
