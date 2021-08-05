@@ -88,7 +88,7 @@ tf_install <- function (conda_env) {
 
   tensorflow::install_tensorflow(method = "conda",
                                  envname = conda_env,
-                                 version = 2.4,
+                                 version = 2.5,
                                  extra_packages = "tensorflow-probability")
 
 }

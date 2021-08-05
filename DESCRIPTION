@@ -1,6 +1,6 @@
 Package: impulse
 Title: Fit Impulse and Sigmoidal Curves to Longitudinal Data Using TensorFlow
-Version: 1.0.1
+Version: 1.0.2
 Authors@R: person(given = "Sean", family = "Hackett",
            role = c("aut", "cre"),
            email = "sean@calicolabs.com",
@@ -21,17 +21,19 @@ LazyData: true
 Depends:
     R (>= 3.1)
 Imports:
-    tibble,
+    checkmate,
     dplyr,
-    tidyr (>= 1.0),
+    ggplot2,
+    glue,
     purrr,
+    reticulate,
     rlang,
     tensorflow (>= 1.9),
-    reticulate,
-    ggplot2
+    tibble,
+    tidyr (>= 1.0)
 Suggests: 
+    gridExtra,
     knitr,
-    rmarkdown,
-    gridExtra
+    rmarkdown
 VignetteBuilder: knitr
 RoxygenNote: 7.1.1

@@ -12,6 +12,7 @@
 #'   \item{\code{impulse}: two sigmoidal responses}
 #'   }
 #' @param n_initializations Number of initializations to use for each timecourse.
+#' @param max_n_initializations Maximum number of initializations that can be used
 #' @param use_prior If FALSE, fit least squares. If TRUE, add priors for a MAP estimate.
 #' @param prior_pars Named numeric vector of parameters to use for priors (if use_prior is TRUE)
 #' \itemize{
@@ -46,17 +47,28 @@
 #'   tidyr::nest_legacy(-true_model, .key = "measurements") %>%
 #'   # fit all models to each timecourse
 #'   tidyr::crossing(tibble::tibble(model = c("sigmoid", "impulse"))) %>%
-#'   dplyr::mutate(timecourse_params = purrr::map2(measurements, model,
-#'                                       estimate_timecourse_params_tf,
-#'                                       n_initializations = 50))
+#'   dplyr::mutate(timecourse_params = purrr::map2(
+#'     measurements,
+#'     model,
+#'     estimate_timecourse_params_tf,
+#'     n_initializations = 20
+#'     ))
 #'
 #' @export
-estimate_timecourse_params_tf <-
-  function(measurements, model = "sigmoid", n_initializations = 100,
-           use_prior = TRUE,
-           prior_pars = c("v_sd" = 1.2, "rate_shape" = 2, "rate_scale" = 0.25,
-                          "time_shape" = 2, "time_scale" = 15),
-           verbose = FALSE) {
+estimate_timecourse_params_tf <- function(
+  measurements,
+  model = "sigmoid",
+  n_initializations = 100,
+  max_n_initializations = 1000,
+  use_prior = TRUE,
+  prior_pars = c(
+    "v_sd" = 1.2,
+    "rate_shape" = 2,
+    "rate_scale" = 0.25,
+    "time_shape" = 2,
+    "time_scale" = 15),
+  verbose = FALSE
+  ) {
 
   if (!requireNamespace("tensorflow", quietly = TRUE)) {
     stop('The "tensorflow" package must be installed to use this function',
@@ -76,20 +88,12 @@ estimate_timecourse_params_tf <-
           paste(missing_vars, collapse = ", "))
   }
 
-  stopifnot(length(model) == 1,
-            model %in% c("sigmoid", "impulse"))
-
-  stopifnot(length(n_initializations) == 1,
-            class(n_initializations) %in% c("numeric", "integer"),
-            n_initializations >= 20)
+  checkmate::assertChoice(model, c("sigmoid", "impulse"))
+  checkmate::assertNumber(n_initializations, lower = 10)
   n_initializations <- as.integer(n_initializations)
-
-  stopifnot(length(use_prior) == 1,
-            all(class(use_prior) == "logical"),
-            use_prior %in% c(TRUE, FALSE))
-  stopifnot(length(verbose) == 1,
-            all(class(verbose) == "logical"),
-            verbose %in% c(TRUE, FALSE))
+  checkmate::assertNumber(max_n_initializations, lower = n_initializations)
+  checkmate::assertLogical(use_prior, len = 1)
+  checkmate::assertLogical(verbose, len = 1)
 
   # test parameters supplied for parameter initialization / priors
 
@@ -105,92 +109,121 @@ estimate_timecourse_params_tf <-
            paste(missing_pars, collapse = ", "), " with \"prior_pars\"")
     }
   } else {
-    initialization_pars <- c("v_sd" = stats::sd(timecourses$log2_fc),
+    prior_pars <- c("v_sd" = stats::sd(timecourses$log2_fc),
                              "t_max" = max(timecourses$time))
   }
+
+  all_timecourse_fits <- list()
+  entry_number <- 0
+  current_n_initializations <- n_initializations
+
+  for (a_tc_id in unique(measurements$tc_id)) {
+    entry_number <- entry_number + 1
+
+    if (verbose) {
+      print(glue::glue("timecourse {a_tc_id} is now running"))
+    }
+
+    one_timecourse <- measurements %>%
+      dplyr::filter(tc_id == a_tc_id)
+
+    continue <- TRUE
+    while (continue) {
+
+      timecourse_fit <- estimate_one_timecourse_params_tf(
+        one_timecourse = one_timecourse,
+        a_tc_id = a_tc_id,
+        use_prior = use_prior,
+        n_initializations = current_n_initializations,
+        model = model,
+        prior_pars = prior_pars,
+        verbose = verbose
+      )
+
+      if (is.null(timecourse_fit)) {
+        current_n_initializations <- current_n_initializations * 2
+
+        if (current_n_initializations > max_n_initializations) {
+          warning (glue::glue(
+            "The number of initialization has reached the limit set by max_n_initializations: {max_n_initializations}
+            for tc_id {a_tc_id}. Fitting will continue with this number of intializations"
+            ))
+        } else {
+          message (glue::glue(
+            "Too few valid initializations for tc_id: {a_tc_id}, increasing initializations to {current_n_initializations}"
+          ))
+        }
+      } else {
+        continue <- FALSE
+      }
+    }
+
+    all_timecourse_fits[[entry_number]] <- timecourse_fit
+  }
+
+  all_timecourse_fits %>%
+    purrr::transpose() %>%
+    purrr::map(dplyr::bind_rows)
+}
+
+#' Estimate One Timecourses Parameters
+#'
+#' @param one_timecourse dynamics of a single timecourse including
+#'   time and abundance variables
+#' @param a_tc_id timecourse id for the timecourse being fit
+#' @inheritParams estimate_timecourse_params_tf
+estimate_one_timecourse_params_tf <- function (
+  one_timecourse,
+  a_tc_id,
+  use_prior,
+  n_initializations,
+  model,
+  prior_pars = NULL,
+  verbose = FALSE
+  ) {
+
+  checkmate::assertDataFrame(one_timecourse)
+  stopifnot(c("time", "abundance") %in% colnames(one_timecourse))
+  checkmate::assertLogical(use_prior, len = 1)
+  checkmate::assertNumber(n_initializations, lower = 10)
+
+  tfp <- reticulate::import("tensorflow_probability")
 
   # Setup initialization
 
   if (model %in% c("sigmoid", "impulse")) {
     # for parameters shared by sigmoid and impulse
 
-    if (use_prior) {
-      v_inter <- tf$Variable(
-        tf$random$normal(shape(n_initializations),
-                         mean = 0,
-                         stddev = prior_pars["v_sd"]),
-        name = "v_inter")
-      t_rise <- tf$Variable(
-        tf$random$gamma(shape(n_initializations),
-                        alpha = prior_pars["time_shape"],
-                        beta = 1 / prior_pars["time_scale"]),
-        name = "t_rise")
-      rate <- tf$Variable(
-        tf$random$gamma(shape(n_initializations),
-                        alpha = prior_pars["rate_shape"],
-                        beta = 1 / prior_pars["rate_scale"]),
-        name = "rate")
-    } else {
-      v_inter <- tf$Variable(
-        tf$random$normal(shape(n_initializations),
-                         mean = 0,
-                         stddev = initialization_pars["v_sd"]),
-        name = "v_inter")
-      t_rise <- tf$Variable(
-        tf$random$uniform(shape(n_initializations),
-                          0,
-                          initialization_pars["t_max"]),
-        name = "t_rise")
-      rate <- tf$Variable(
-        tf$random$uniform(shape(n_initializations),
-                          0,
-                          1),
-        name = "rate")
-    }
-
+    sigmoid_params <- init_sigmoid_parameters(use_prior, n_initializations, prior_pars)
+    v_inter <- sigmoid_params$v_inter
+    t_rise <- sigmoid_params$t_rise
+    rate <- sigmoid_params$rate
     parameters <- c("v_inter", "t_rise", "rate")
   }
 
   if (model == "impulse") {
     # setup impulse specific parameters
 
-    if (use_prior) {
-      v_final <- tf$Variable(
-        tf$random$normal(shape(n_initializations),
-                         mean = 0,
-                         stddev = prior_pars["v_sd"]),
-        name = "v_final")
-      t_diff <- tf$Variable(
-        tf$random$gamma(shape(n_initializations),
-                        alpha = prior_pars["time_shape"],
-                        beta = 1 / prior_pars["time_scale"]),
-        name = "t_diff")
-    } else {
-      v_final <- tf$Variable(
-        tf$random$normal(shape(n_initializations),
-                         mean = 0,
-                         stddev = initialization_pars["v_sd"]),
-        name = "v_final")
-      t_diff <- tf$Variable(
-        tf$random$uniform(shape(n_initializations),
-                          0,
-                          initialization_pars["t_max"]),
-        name = "t_diff")
-    }
-    t_fall <- tf$add(t_rise, t_diff, name = "t_final")
-
+    impulse_params <- init_impulse_parameters(use_prior, n_initializations, prior_pars, t_rise)
+    v_final <- impulse_params$v_final
+    t_diff <- impulse_params$t_diff
+    t_fall <- impulse_params$t_fall
     parameters <- c(parameters, "v_final", "t_fall")
   }
 
   # Setup model
 
   # data
-  timepts <- tf$compat$v1$placeholder(tf$float32,
-                            shape(NULL, n_initializations),
-                            name = "time")
-  expression <- tf$compat$v1$placeholder(tf$float32,
-                               shape(NULL, n_initializations),
-                               name = "measured_expression")
+  timepts <- tf$compat$v1$placeholder(
+    tf$float32,
+    shape(NULL, n_initializations),
+    name = "time"
+  )
+  expression <- tf$compat$v1$placeholder(
+    tf$float32,
+    shape(NULL, n_initializations),
+    name = "measured_expression"
+  )
 
   if (model == "sigmoid") {
     # "v_inter*(1/(1 + exp(-1*rate*(time - t_rise))))"
@@ -228,7 +261,7 @@ estimate_timecourse_params_tf <-
 
   if (use_prior) {
     v_prior <- tfp$distributions$Normal(loc = 0,
-                                       scale = prior_pars["v_sd"])
+                                        scale = prior_pars["v_sd"])
     rate_prior <- tfp$distributions$Gamma(
       concentration = prior_pars["rate_shape"],
       rate = 1 / prior_pars["rate_scale"])
@@ -263,7 +296,7 @@ estimate_timecourse_params_tf <-
   if (use_prior) {
     # minimize normal likelihood with priors
     norm_target <- tfp$distributions$Normal(loc = expression,
-                                           scale = 0.1)
+                                            scale = 0.1)
     normal_logLik <- tf$reduce_sum(norm_target$log_prob(fit_expression),
                                    axis = 0L, name = "normal_logLik")
     logPr <- tf$subtract(0, tf$add(normal_logLik, model_log_pr))
@@ -276,149 +309,201 @@ estimate_timecourse_params_tf <-
   }
   train <- optimizer$minimize(loss = loss, name = "train")
 
-  all_timecourse_fits <- list()
-  entry_number <- 0
-  for (a_tc_id in unique(measurements$tc_id)) {
-    entry_number <- entry_number + 1
+  # train the model
 
-    if (verbose) {
-      print(paste0(a_tc_id, " timecourse running"))
+
+  timecourse_dict <- dict(timepts = matrix(one_timecourse$time,
+                                           nrow = nrow(one_timecourse),
+                                           ncol = n_initializations),
+                          expression = matrix(one_timecourse$abundance,
+                                              nrow = nrow(one_timecourse),
+                                              ncol = n_initializations))
+
+  sess <- tf$compat$v1$Session()
+  # initialize parameters
+  sess$run(tf$compat$v1$global_variables_initializer())
+
+  # keep track of initialization for error checking
+  initial_vals <- lapply(parameters,
+                         function(variable){
+                           tibble::tibble(
+                             variable = variable,
+                             init_id = 1:n_initializations,
+                             value = sess$run(eval(parse(text = variable)))
+                           )
+                         }) %>%
+    dplyr::bind_rows()
+
+  # find an NLS/MAP minima for each initialization
+
+  past_loss <- 100000
+  continue <- TRUE
+  while (continue) {
+    # train
+    for (i in 1:100) {
+      sess$run(train,
+               feed_dict = timecourse_dict)
     }
 
-    one_timecourse <- measurements %>%
-      dplyr::filter(tc_id == a_tc_id)
-
-    # timecourse-specific data
-
-    timecourse_dict <- dict(timepts = matrix(one_timecourse$time,
-                                             nrow = nrow(one_timecourse),
-                                             ncol = n_initializations),
-                            expression = matrix(one_timecourse$abundance,
-                                                nrow = nrow(one_timecourse),
-                                                ncol = n_initializations))
-
-    sess <- tf$compat$v1$Session()
-    # initialize parameters
-    sess$run(tf$compat$v1$global_variables_initializer())
-
-    # keep track of initialization for error checking
-    initial_vals <- lapply(parameters,
-                           function(variable){
-                             tibble::tibble(
-                               variable = variable,
-                               init_id = 1:n_initializations,
-                               value = sess$run(eval(parse(text = variable)))
-                               )
-                             }) %>%
-      dplyr::bind_rows()
-
-    # find an NLS maxima from each initialization
-
-    past_loss <- 100000
-    continue <- TRUE
-    while (continue) {
-      # train
-      for (i in 1:1000) {
-        sess$run(train,
-                 feed_dict = timecourse_dict)
-      }
-
-      # loss (MSE) for individual parameter sets
-      current_losses <- if (use_prior) {
-        sess$run(logPr, feed_dict = timecourse_dict)
-      } else {
-        sess$run(mean_squared_error, feed_dict = timecourse_dict)
-      }
-
-      if (sum(!is.nan(current_losses)) < pmin(10, n_initializations)) {
-        warning("reinitializing due to too few valid parameter sets\n")
-        # if too few parameter sets are valid, reinitialize all parameters
-        sess$run(tf$compat$v1$global_variables_initializer())
-
-        # keep track of initialization for error checking
-        initial_vals <- lapply(parameters,
-                               function(variable){
-                                 tibble::tibble(
-                                   variable = variable,
-                                   init_id = 1:n_initializations,
-                                   value = sess$run(
-                                     eval(parse(text = variable))
-                                     )
-                                   )
-                                 }) %>%
-          dplyr::bind_rows()
-
-        past_loss <- 100000
-        next
-      } else {
-        valid_summed_loss <- sum(current_losses[!is.nan(current_losses)])
-
-        if (verbose) {
-          print(valid_summed_loss)
-        }
-
-        if (past_loss - valid_summed_loss > 0.0001) {
-          past_loss <- valid_summed_loss
-        } else{
-          continue <- FALSE
-        }
-      }
-    }
-
-    # summarize valid (and invalid) parameter sets
-
-    output <- list()
-
-    # invalid parameter set initial parameters
-
-    if (any(is.nan(current_losses))) {
-      output$invalid_timecourse_fits <- initial_vals %>%
-        dplyr::filter(init_id %in% which(is.nan(current_losses))) %>%
-        dplyr::mutate(tc_id = a_tc_id) %>%
-        dplyr::select(tc_id, init_id, variable, value)
+    # loss for individual parameter sets
+    current_losses <- if (use_prior) {
+      sess$run(logPr, feed_dict = timecourse_dict)
     } else {
-      output$invalid_timecourse_fits <- data.frame()
+      sess$run(mean_squared_error, feed_dict = timecourse_dict)
     }
 
-    # valid parameter set optimal parameters, fits, MSE
-    valid_parameter_sets <- which(!is.nan(current_losses))
-
-    # fit parameters
-
-    output$parameters <- lapply(
-      parameters,
-      function(variable){
-        tibble::tibble(variable = variable,
-                       init_id = 1:n_initializations,
-                       value = sess$run(eval(parse(text = variable))))
-        }) %>%
-      dplyr::bind_rows() %>%
-      dplyr::filter(init_id %in% valid_parameter_sets) %>%
-      dplyr::mutate(tc_id = a_tc_id) %>%
-      dplyr::select(tc_id, init_id, variable, value)
-
-    output$loss <- if (use_prior) {
-      tibble::tibble(tc_id = a_tc_id,
-                     init_id = valid_parameter_sets,
-                     loss = current_losses[valid_parameter_sets],
-                     logLik = sess$run(
-                       normal_logLik,
-                       feed_dict = timecourse_dict)[valid_parameter_sets],
-                     logPriorPr = sess$run(
-                       model_log_pr,
-                       feed_dict = timecourse_dict)[valid_parameter_sets])
+    if (sum(!is.nan(current_losses)) < pmin(10, n_initializations)) {
+      # return NULL so the run can be re-initilized
+      return(NULL)
     } else {
-      tibble::tibble(tc_id = a_tc_id,
-                     init_id = valid_parameter_sets,
-                     loss = current_losses[valid_parameter_sets])
-    }
+      valid_average_loss <- mean(current_losses, na.rm = TRUE)
 
-    all_timecourse_fits[[entry_number]] <- output
+      if (verbose) {
+        print(valid_average_loss)
+      }
+
+      if (past_loss - valid_average_loss > 0.001) {
+        past_loss <- valid_average_loss
+      } else{
+        continue <- FALSE
+      }
+    }
   }
 
-  all_timecourse_fits %>%
-    purrr::transpose() %>%
-    purrr::map(dplyr::bind_rows)
+  # summarize valid (and invalid) parameter sets
+
+  output <- list()
+
+  # invalid parameter set initial parameters
+
+  if (any(is.nan(current_losses))) {
+    output$invalid_timecourse_fits <- initial_vals %>%
+      dplyr::filter(init_id %in% which(is.nan(current_losses))) %>%
+      dplyr::mutate(tc_id = a_tc_id) %>%
+      dplyr::select(tc_id, init_id, variable, value)
+  } else {
+    output$invalid_timecourse_fits <- data.frame()
+  }
+
+  # valid parameter set optimal parameters, fits, MSE
+  valid_parameter_sets <- which(!is.nan(current_losses))
+
+  # fit parameters
+
+  output$parameters <- lapply(
+    parameters,
+    function(variable){
+      tibble::tibble(variable = variable,
+                     init_id = 1:n_initializations,
+                     value = sess$run(eval(parse(text = variable))))
+    }) %>%
+    dplyr::bind_rows() %>%
+    dplyr::filter(init_id %in% valid_parameter_sets) %>%
+    dplyr::mutate(tc_id = a_tc_id) %>%
+    dplyr::select(tc_id, init_id, variable, value)
+
+  output$loss <- if (use_prior) {
+    tibble::tibble(tc_id = a_tc_id,
+                   init_id = valid_parameter_sets,
+                   loss = current_losses[valid_parameter_sets],
+                   logLik = sess$run(
+                     normal_logLik,
+                     feed_dict = timecourse_dict)[valid_parameter_sets],
+                   logPriorPr = sess$run(
+                     model_log_pr,
+                     feed_dict = timecourse_dict)[valid_parameter_sets])
+  } else {
+    tibble::tibble(tc_id = a_tc_id,
+                   init_id = valid_parameter_sets,
+                   loss = current_losses[valid_parameter_sets])
+  }
+
+  return(output)
+}
+
+init_sigmoid_parameters <- function(use_prior, n_initializations, prior_pars = NULL) {
+
+  checkmate::assertLogical(use_prior, len = 1)
+  checkmate::assertNumber(n_initializations, lower = 10)
+
+  if (use_prior) {
+    v_inter <- tf$Variable(
+      tf$random$normal(shape(n_initializations),
+                       mean = 0,
+                       stddev = prior_pars["v_sd"]),
+      name = "v_inter")
+    t_rise <- tf$Variable(
+      tf$random$gamma(shape(n_initializations),
+                      alpha = prior_pars["time_shape"],
+                      beta = 1 / prior_pars["time_scale"]),
+      name = "t_rise")
+    rate <- tf$Variable(
+      tf$random$gamma(shape(n_initializations),
+                      alpha = prior_pars["rate_shape"],
+                      beta = 1 / prior_pars["rate_scale"]),
+      name = "rate")
+  } else {
+    v_inter <- tf$Variable(
+      tf$random$normal(shape(n_initializations),
+                       mean = 0,
+                       stddev = prior_pars["v_sd"]),
+      name = "v_inter")
+    t_rise <- tf$Variable(
+      tf$random$uniform(shape(n_initializations),
+                        0,
+                        prior_pars["t_max"]),
+      name = "t_rise")
+    rate <- tf$Variable(
+      tf$random$uniform(shape(n_initializations),
+                        0,
+                        1),
+      name = "rate")
+  }
+
+  return(
+    list(v_inter = v_inter,
+         t_rise = t_rise,
+         rate = rate)
+  )
+}
+
+init_impulse_parameters <- function(use_prior, n_initializations, prior_pars = NULL, t_rise) {
+
+  checkmate::assertLogical(use_prior, len = 1)
+  checkmate::assertNumber(n_initializations, lower = 10)
+
+  if (use_prior) {
+    v_final <- tf$Variable(
+      tf$random$normal(shape(n_initializations),
+                       mean = 0,
+                       stddev = prior_pars["v_sd"]),
+      name = "v_final")
+    t_diff <- tf$Variable(
+      tf$random$gamma(shape(n_initializations),
+                      alpha = prior_pars["time_shape"],
+                      beta = 1 / prior_pars["time_scale"]),
+      name = "t_diff")
+  } else {
+    v_final <- tf$Variable(
+      tf$random$normal(shape(n_initializations),
+                       mean = 0,
+                       stddev = prior_pars["v_sd"]),
+      name = "v_final")
+    t_diff <- tf$Variable(
+      tf$random$uniform(shape(n_initializations),
+                        0,
+                        prior_pars["t_max"]),
+      name = "t_diff")
+  }
+  t_fall <- tf$add(t_rise, t_diff, name = "t_final")
+
+  return(
+    list(
+      v_final = v_final,
+      t_diff = t_diff,
+      t_fall = t_fall
+    )
+  )
 }
 
 #' Reduce to best timecourse parameters

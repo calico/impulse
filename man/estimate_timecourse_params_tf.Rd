@@ -8,6 +8,7 @@ estimate_timecourse_params_tf(
   measurements,
   model = "sigmoid",
   n_initializations = 100,
+  max_n_initializations = 1000,
   use_prior = TRUE,
   prior_pars = c(v_sd = 1.2, rate_shape = 2, rate_scale = 0.25, time_shape = 2,
     time_scale = 15),
@@ -29,6 +30,8 @@ estimate_timecourse_params_tf(
   }}
 
 \item{n_initializations}{Number of initializations to use for each timecourse.}
+
+\item{max_n_initializations}{Maximum number of initializations that can be used}
 
 \item{use_prior}{If FALSE, fit least squares. If TRUE, add priors for a MAP estimate.}
 
@@ -70,8 +73,11 @@ timecourses \%>\%
   tidyr::nest_legacy(-true_model, .key = "measurements") \%>\%
   # fit all models to each timecourse
   tidyr::crossing(tibble::tibble(model = c("sigmoid", "impulse"))) \%>\%
-  dplyr::mutate(timecourse_params = purrr::map2(measurements, model,
-                                      estimate_timecourse_params_tf,
-                                      n_initializations = 50))
+  dplyr::mutate(timecourse_params = purrr::map2(
+    measurements,
+    model,
+    estimate_timecourse_params_tf,
+    n_initializations = 20
+    ))
 
 }
