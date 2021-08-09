@@ -11,6 +11,7 @@ estimate_one_timecourse_params_tf(
   n_initializations,
   model,
   prior_pars = NULL,
+  learning_rate = 0.1,
   verbose = FALSE
 )
 }
@@ -38,6 +39,8 @@ time and abundance variables}
   \item{\code{time_shape}: Shape of t_rise and t_fall - t_rise Gamma}
   \item{\code{time_scale}: Scale of t_rise and t_fall - t_rise Gamma}
   }}
+
+\item{learning_rate}{learning rate for the Adams optimizer}
 
 \item{verbose}{if TRUE then print additional information}
 }
