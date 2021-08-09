@@ -12,6 +12,7 @@ estimate_timecourse_params_tf(
   use_prior = TRUE,
   prior_pars = c(v_sd = 1.2, rate_shape = 2, rate_scale = 0.25, time_shape = 2,
     time_scale = 15),
+  learning_rate = 0.1,
   verbose = FALSE
 )
 }
@@ -43,6 +44,8 @@ estimate_timecourse_params_tf(
   \item{\code{time_shape}: Shape of t_rise and t_fall - t_rise Gamma}
   \item{\code{time_scale}: Scale of t_rise and t_fall - t_rise Gamma}
   }}
+
+\item{learning_rate}{learning rate for the Adams optimizer}
 
 \item{verbose}{if TRUE then print additional information}
 }

@@ -22,6 +22,7 @@
 #'   \item{\code{time_shape}: Shape of t_rise and t_fall - t_rise Gamma}
 #'   \item{\code{time_scale}: Scale of t_rise and t_fall - t_rise Gamma}
 #'   }
+#' @param learning_rate learning rate for the Adams optimizer
 #' @param verbose if TRUE then print additional information
 #'
 #' @return a timecourse list:
@@ -67,6 +68,7 @@ estimate_timecourse_params_tf <- function(
     "rate_scale" = 0.25,
     "time_shape" = 2,
     "time_scale" = 15),
+  learning_rate = 0.1,
   verbose = FALSE
   ) {
 
@@ -93,6 +95,7 @@ estimate_timecourse_params_tf <- function(
   n_initializations <- as.integer(n_initializations)
   checkmate::assertNumber(max_n_initializations, lower = n_initializations)
   checkmate::assertLogical(use_prior, len = 1)
+  checkmate::assertNumber(learning_rate, lower = 0)
   checkmate::assertLogical(verbose, len = 1)
 
   # test parameters supplied for parameter initialization / priors
@@ -137,6 +140,7 @@ estimate_timecourse_params_tf <- function(
         n_initializations = current_n_initializations,
         model = model,
         prior_pars = prior_pars,
+        learning_rate = learning_rate,
         verbose = verbose
       )
 
@@ -179,6 +183,7 @@ estimate_one_timecourse_params_tf <- function (
   n_initializations,
   model,
   prior_pars = NULL,
+  learning_rate = 0.1,
   verbose = FALSE
   ) {
 
@@ -186,6 +191,8 @@ estimate_one_timecourse_params_tf <- function (
   stopifnot(c("time", "abundance") %in% colnames(one_timecourse))
   checkmate::assertLogical(use_prior, len = 1)
   checkmate::assertNumber(n_initializations, lower = 10)
+  checkmate::assertNumber(learning_rate, lower = 0)
+  checkmate::assertLogical(verbose, len = 1)
 
   tfp <- reticulate::import("tensorflow_probability")
 
@@ -291,7 +298,7 @@ estimate_one_timecourse_params_tf <- function (
                                        axis = 0L,
                                        name = "MSE")
 
-  optimizer <- tf$compat$v1$train$AdamOptimizer(0.01)
+  optimizer <- tf$compat$v1$train$AdamOptimizer(learning_rate)
 
   if (use_prior) {
     # minimize normal likelihood with priors
@@ -356,14 +363,14 @@ estimate_one_timecourse_params_tf <- function (
       # return NULL so the run can be re-initilized
       return(NULL)
     } else {
-      valid_average_loss <- mean(current_losses, na.rm = TRUE)
+      valid_summed_loss <- sum(current_losses, na.rm = TRUE)
 
       if (verbose) {
-        print(valid_average_loss)
+        print(valid_summed_loss)
       }
 
-      if (past_loss - valid_average_loss > 0.001) {
-        past_loss <- valid_average_loss
+      if (past_loss - valid_summed_loss > 0.001) {
+        past_loss <- valid_summed_loss
       } else{
         continue <- FALSE
       }
