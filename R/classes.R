@@ -7,14 +7,38 @@ utils::globalVariables(c(
   "timecourses",
   "tc_id",
   "init_id",
-                         "variable", "value", "time", "fit", "model", "logLik",
-                         "sigmoid", "impulse", "logLik_diff", "model_pchisq",
-                         "model_qchisq", "t_rise", "t_fall", "par", "params",
-                         "parameters", "measurements", "model_pars", "time",
-                         "v_inter", "v_final", ".", "rate", "assymp_type",
-                         "assymp", "t_saturation_start", "t_saturation_end",
-                         "abundance", "best_model", "fitted_timecourses",
-                         "loss", "v_abs_sum"))
+  "variable",
+  "value",
+  "time",
+  "fit",
+  "model",
+  "logLik",
+  "sigmoid",
+  "impulse",
+  "logLik_diff",
+  "model_pchisq",
+  "model_qchisq",
+  "t_rise",
+  "t_fall",
+  "par",
+  "params",
+  "parameters",
+  "measurements",
+  "model_pars",
+  "time",
+  "v_inter",
+  "v_final",
+  ".",
+  "rate",
+  "assymp_type",
+  "assymp",
+  "t_saturation_start",
+  "t_saturation_end",
+  "abundance",
+  "best_model",
+  "fitted_timecourses",
+  "loss",
+  "v_abs_sum"))
 
 #' Validate Parameters
 #'
@@ -69,15 +93,13 @@ auto_config_tf <- function (conda_env = "r-tensorflow") {
   if ("character" %in% class(conda_envs) ||
     !(conda_env %in% conda_envs$name)) {
       # if no environment exists then create a conda environment w/ TF
-      tf_install(conda_env)
-  } else {
-    # load a conda environment and install TF if needed
-    reticulate::use_condaenv(conda_env, required = TRUE)
-    # install TF and TF probability if needed
-    tf_install(conda_env)
+    reticulate::conda_create(envname = conda_env)
   }
 
+  # force reticulate to use the specified conda environment
   reticulate::use_condaenv(conda_env, required = TRUE)
+  # install TF an TF probability if they don't already exist
+  tf_install(conda_env)
 
   if (!reticulate::py_module_available("tensorflow")) {
     stop ("TensorFlow was not found after installation. This may be because the conda path was not found")
@@ -92,7 +114,8 @@ tf_install <- function (conda_env) {
     tensorflow::install_tensorflow(
       method = "conda",
       envname = conda_env,
-      version = 2.5
+      version = 2.5,
+      restart_session = FALSE
     )
   }
 
