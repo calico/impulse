@@ -2,7 +2,11 @@
 #' @importFrom rlang :=
 #' @import tensorflow
 #' @import ggplot2
-utils::globalVariables(c("sim_fit", "timecourses", "tc_id", "init_id",
+utils::globalVariables(c(
+  "sim_fit",
+  "timecourses",
+  "tc_id",
+  "init_id",
                          "variable", "value", "time", "fit", "model", "logLik",
                          "sigmoid", "impulse", "logLik_diff", "model_pchisq",
                          "model_qchisq", "t_rise", "t_fall", "par", "params",
@@ -59,20 +63,18 @@ validate_priors <- function (model, prior_pars) {
 #' @export
 auto_config_tf <- function (conda_env = "r-tensorflow") {
 
-  stopifnot(class(conda_env) == "character", length(conda_env) == 1)
-
+  checkmate::assertString(conda_env)
   conda_envs <- reticulate::conda_list()
 
   if ("character" %in% class(conda_envs) ||
-      !(conda_env %in% conda_envs$name)) {
-    # if no environment exists then create a conda environment w/ TF
-    tf_install(conda_env)
+    !(conda_env %in% conda_envs$name)) {
+      # if no environment exists then create a conda environment w/ TF
+      tf_install(conda_env)
   } else {
     # load a conda environment and install TF if needed
     reticulate::use_condaenv(conda_env, required = TRUE)
-    if (!reticulate::py_module_available("tensorflow")) {
-      tf_install(conda_env)
-    }
+    # install TF and TF probability if needed
+    tf_install(conda_env)
   }
 
   reticulate::use_condaenv(conda_env, required = TRUE)
@@ -84,11 +86,25 @@ auto_config_tf <- function (conda_env = "r-tensorflow") {
 
 tf_install <- function (conda_env) {
 
-  print(paste0("Installing Tensorflow in the ", conda_env, " conda environemnt"))
+  if (!reticulate::py_module_available("tensorflow")) {
+    print(paste0("Installing Tensorflow in the ", conda_env, " conda environment"))
 
-  tensorflow::install_tensorflow(method = "conda",
-                                 envname = conda_env,
-                                 version = 2.5,
-                                 extra_packages = "tensorflow-probability")
+    tensorflow::install_tensorflow(
+      method = "conda",
+      envname = conda_env,
+      version = 2.5
+    )
+  }
 
+  if (!reticulate::py_module_available("tensorflow_probability")) {
+    print(paste0("Installing TF probability into the ", conda_env, " conda environment"))
+
+    reticulate::conda_install(
+      envname = conda_env,
+      packages = "tensorflow-probability==0.13.0",
+      pip = TRUE
+    )
+  }
+
+  return(invisible(0))
 }
