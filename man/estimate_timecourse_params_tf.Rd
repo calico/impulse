@@ -12,22 +12,27 @@ estimate_timecourse_params_tf(
   use_prior = TRUE,
   prior_pars = c(v_sd = 1.2, rate_shape = 2, rate_scale = 0.25, time_shape = 2,
     time_scale = 15),
+  fit_intercept = FALSE,
   learning_rate = 0.1,
   verbose = FALSE
 )
 }
 \arguments{
 \item{measurements}{a tibble containing:
-\itemize{
-  \item{\code{tc_id}: a unique indicator for each timecourse"},
-  \item{\code{time}: a numeric predictor variable},
-  \item{\code{abundance}: a numeric response variable}
+\describe{
+  \item{tc_id}{a unique indicator for each timecourse"}
+  \item{time}{a numeric predictor variable}
+  \item{abundance}{a numeric response variable}
+  \item{noise (optional)}{if provided, a numeric variable specifying the
+  noise estimate for each observation. This will be used to calculate the
+  Gaussian likelihood if priors are used, or to calculate a weighted
+  sum-of-squares estimate if priors are not used}
   }}
 
 \item{model}{model to fit:
-\itemize{
-  \item{\code{sigmoid}: one sigmoidal response},
-  \item{\code{impulse}: two sigmoidal responses}
+\describe{
+  \item{sigmoid}{one sigmoidal response}
+  \item{impulse}{two sigmoidal responses}
   }}
 
 \item{n_initializations}{Number of initializations to use for each timecourse.}
@@ -37,13 +42,15 @@ estimate_timecourse_params_tf(
 \item{use_prior}{If FALSE, fit least squares. If TRUE, add priors for a MAP estimate.}
 
 \item{prior_pars}{Named numeric vector of parameters to use for priors (if use_prior is TRUE)
-\itemize{
-  \item{\code{v_sd}: Gaussian SD of assymptotes (v_inter and v_final)}
-  \item{\code{rate_shape}: Shape of rate Gamma}
-  \item{\code{rate_scale}: Scale of rate Gamma}
-  \item{\code{time_shape}: Shape of t_rise and t_fall - t_rise Gamma}
-  \item{\code{time_scale}: Scale of t_rise and t_fall - t_rise Gamma}
+\describe{
+  \item{v_sd}{Gaussian SD of assymptotes (v_inter and v_final)}
+  \item{rate_shape}{Shape of rate Gamma}
+  \item{rate_scale}{Scale of rate Gamma}
+  \item{time_shape}{Shape of t_rise and t_fall - t_rise Gamma}
+  \item{time_scale}{Scale of t_rise and t_fall - t_rise Gamma}
   }}
+
+\item{fit_intercept}{If TRUE, the intercept will be fit, if FALSE, the intercept will be constrainted to zero}
 
 \item{learning_rate}{learning rate for the Adams optimizer}
 
@@ -51,11 +58,11 @@ estimate_timecourse_params_tf(
 }
 \value{
 a timecourse list:
-\itemize{
-  \item{\code{invalid_timecourse_fits}: tibble of parameter initializations for initializations
-  that went to NaN for debugging},
-  \item{\code{loss}: tibble of losses for each tc_id and inititalization (init_id)},
-  \item{\code{parameters}: tibble of final parameters for each tc_id and initialization (init_id)}
+\describe{
+  \item{invalid_timecourse_fits}{tibble of parameter initializations for initializations
+  that went to NaN for debugging}
+  \item{loss}{tibble of losses for each tc_id and inititalization (init_id)}
+  \item{parameters}{tibble of final parameters for each tc_id and initialization (init_id)}
   }
 }
 \description{

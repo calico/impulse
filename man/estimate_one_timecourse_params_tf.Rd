@@ -11,6 +11,7 @@ estimate_one_timecourse_params_tf(
   n_initializations,
   model,
   prior_pars = NULL,
+  fit_intercept = FALSE,
   learning_rate = 0.1,
   verbose = FALSE
 )
@@ -26,19 +27,21 @@ time and abundance variables}
 \item{n_initializations}{Number of initializations to use for each timecourse.}
 
 \item{model}{model to fit:
-\itemize{
-  \item{\code{sigmoid}: one sigmoidal response},
-  \item{\code{impulse}: two sigmoidal responses}
+\describe{
+  \item{sigmoid}{one sigmoidal response}
+  \item{impulse}{two sigmoidal responses}
   }}
 
 \item{prior_pars}{Named numeric vector of parameters to use for priors (if use_prior is TRUE)
-\itemize{
-  \item{\code{v_sd}: Gaussian SD of assymptotes (v_inter and v_final)}
-  \item{\code{rate_shape}: Shape of rate Gamma}
-  \item{\code{rate_scale}: Scale of rate Gamma}
-  \item{\code{time_shape}: Shape of t_rise and t_fall - t_rise Gamma}
-  \item{\code{time_scale}: Scale of t_rise and t_fall - t_rise Gamma}
+\describe{
+  \item{v_sd}{Gaussian SD of assymptotes (v_inter and v_final)}
+  \item{rate_shape}{Shape of rate Gamma}
+  \item{rate_scale}{Scale of rate Gamma}
+  \item{time_shape}{Shape of t_rise and t_fall - t_rise Gamma}
+  \item{time_scale}{Scale of t_rise and t_fall - t_rise Gamma}
   }}
+
+\item{fit_intercept}{If TRUE, the intercept will be fit, if FALSE, the intercept will be constrainted to zero}
 
 \item{learning_rate}{learning rate for the Adams optimizer}
 

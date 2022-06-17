@@ -5,24 +5,27 @@
 #' @inheritParams fit_timecourse
 #' @inheritParams estimate_timecourse_params_tf
 #' @param measurement_sd gaussian measurement noise to add
+#' @param observation_level_noise scale samples by
+#'   exp(rnorm(1)*\code{observation_level_noise}) to introduce samples with
+#'   varying noise levels. Set a zero by default for a homoschedastic model.
 #'
 #' @export
 #'
 #' @examples
 #' simulate_timecourses(n = 20)
-simulate_timecourses <-
-  function (n, Pr_impulse = 0.5, timepts = seq(0, 120, by = 5),
-            prior_pars = c("v_sd" = 1.2, "rate_shape" = 2, "rate_scale" = 0.25,
-                           "time_shape" = 1, "time_scale" = 30),
-            measurement_sd = 0.2) {
+simulate_timecourses <- function (
+    n,
+    Pr_impulse = 0.5,
+    timepts = seq(0, 120, by = 5),
+    prior_pars = c("v_sd" = 1.2, "rate_shape" = 2, "rate_scale" = 0.25,
+                   "time_shape" = 1, "time_scale" = 30),
+    measurement_sd = 0.2,
+    observation_level_noise = 0
+    ) {
 
-  stopifnot(class(Pr_impulse) == "numeric",
-            length(Pr_impulse) == 1,
-            Pr_impulse >= 0,
-            Pr_impulse <= 1)
-  stopifnot(class(measurement_sd) == "numeric",
-            length(measurement_sd) == 1,
-            measurement_sd > 0)
+  checkmate::assertNumber(Pr_impulse, lower = 0, upper = 1)
+  checkmate::assertNumber(measurement_sd, lower = 0)
+  checkmate::assertNumber(measurement_sd, lower = observation_level_noise)
 
   model_counts <- stats::rmultinom(1,
                                    size = n,
@@ -37,24 +40,31 @@ simulate_timecourses <-
     dplyr::select(-n) %>%
     tidyr::unnest_legacy(model_pars)
 
-  model_parameters %>%
+  timecourses <- model_parameters %>%
     tidyr::nest_legacy(-tc_id, -model, .key = "params") %>%
-    dplyr::mutate(measurements = purrr::map2(params, model,
-                                             fit_timecourse,
-                                             timepts = timepts,
-                                             fit.label  = "sim_fit"),
-                  measurements = purrr::map(measurements,
-                                            add_noise,
-                                            measurement_sd = measurement_sd),
-                  tc_id = 1:dplyr::n()) %>%
+    dplyr::mutate(
+      measurements = purrr::map2(params, model,
+                                 fit_timecourse,
+                                 timepts = timepts,
+                                 fit.label  = "sim_fit"),
+      measurements = purrr::map(measurements,
+                                add_noise,
+                                measurement_sd = measurement_sd,
+                                observation_level_noise = observation_level_noise),
+      tc_id = 1:dplyr::n()) %>%
     dplyr::rename(true_model = model)
+
+  return(timecourses)
 }
 
-add_noise <- function(measurements, measurement_sd) {
+add_noise <- function(measurements, measurement_sd, observation_level_noise) {
   measurements %>%
-    dplyr::mutate(abundance = stats::rnorm(dplyr::n(),
-                                           mean = sim_fit,
-                                           sd = measurement_sd))
+    dplyr::mutate(
+      noise = exp(rnorm(dplyr::n())*observation_level_noise)*measurement_sd,
+      abundance = stats::rnorm(dplyr::n(),
+                               mean = sim_fit,
+                               sd = noise)
+      )
 }
 
 #' Simulate parameters
