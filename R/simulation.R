@@ -25,7 +25,7 @@ simulate_timecourses <- function (
 
   checkmate::assertNumber(Pr_impulse, lower = 0, upper = 1)
   checkmate::assertNumber(measurement_sd, lower = 0)
-  checkmate::assertNumber(measurement_sd, lower = observation_level_noise)
+  checkmate::assertNumber(observation_level_noise, lower = 0)
 
   model_counts <- stats::rmultinom(1,
                                    size = n,

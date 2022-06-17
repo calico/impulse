@@ -45,7 +45,7 @@
 #' auto_config_tf()
 #'
 #' set.seed(123)
-#' timecourses <- simulate_timecourses(n = 2)
+#' timecourses <- simulate_timecourses(n = 2, observation_level_noise = 0.5)
 #'
 #' timecourses %>%
 #'   tidyr::unnest_legacy(measurements) %>%
@@ -242,6 +242,22 @@ estimate_one_timecourse_params_tf <- function (
     shape(NULL, n_initializations),
     name = "measured_expression"
   )
+  noise <- tf$compat$v1$placeholder(
+    tf$float32,
+    shape(NULL, n_initializations),
+    name = "noise"
+  )
+  # either fix offset to zero or keep it as a free parameter
+  if (fit_intercept) {
+    tzero_offset <- tf$Variable(
+      tf$random$normal(shape(n_initializations),
+                       mean = 0,
+                       stddev = 0),
+      name = "tzero_offset")
+    parameters <- c(parameters, "tzero_offset")
+  } else {
+    tzero_offset <- 0
+  }
 
   if (model == "sigmoid") {
     # "v_inter*(1/(1 + exp(-1*rate*(time - t_rise))))"
@@ -250,8 +266,10 @@ estimate_one_timecourse_params_tf <- function (
     rise_exp <- tf$exp(tf$multiply(-1, rate) * tf$subtract(timepts, t_rise),
                        name = "exponentiation")
 
-    fit_expression <- tf$multiply(v_inter, tf$divide(1, 1 + rise_exp),
-                                  name = "expression_fitted_values")
+    rise_sigmoid <- tf$multiply(v_inter, tf$divide(1, 1 + rise_exp),
+                                name = "expression_sigmoid")
+
+    fit_expression <- tf$add(rise_sigmoid, tzero_offset, name = "expression_fitted_values")
 
   } else if (model == "impulse") {
     # "(1/(1 + exp(-1*rate*(time - t_rise)))) * (v_final + (v_inter -
@@ -303,12 +321,6 @@ estimate_one_timecourse_params_tf <- function (
   }
 
   # general model formatting
-
-  sum_of_squares <- (expression - fit_expression)^2
-  mean_squared_error <- tf$reduce_mean(sum_of_squares,
-                                       axis = 0L,
-                                       name = "MSE")
-
   optimizer <- tf$compat$v1$train$AdamOptimizer(learning_rate)
 
   if (use_prior) {
@@ -323,19 +335,40 @@ estimate_one_timecourse_params_tf <- function (
     loss <- tf$reduce_sum(logPr, name = "reduce_logPr")
   } else {
     # minimize SS error
+    sum_of_squares <- (expression - fit_expression)^2
+    mean_squared_error <- tf$reduce_mean(sum_of_squares,
+                                         axis = 0L,
+                                         name = "MSE")
+
     loss <- tf$reduce_sum(mean_squared_error, name = "reduce_MSE")
   }
   train <- optimizer$minimize(loss = loss, name = "train")
 
   # train the model
 
+  if ("noise" %in% colnames(one_timecourse)) {
+    noise_entry <- matrix(
+      one_timecourse$noise,
+      nrow = nrow(one_timecourse),
+      ncol = n_initializations
+      )
+  } else {
+    # constant noise
+    noise_entry <- matrix(
+      0.2,
+      nrow = nrow(one_timecourse),
+      ncol = n_initializations
+    )
+  }
 
   timecourse_dict <- dict(timepts = matrix(one_timecourse$time,
                                            nrow = nrow(one_timecourse),
                                            ncol = n_initializations),
                           expression = matrix(one_timecourse$abundance,
                                               nrow = nrow(one_timecourse),
-                                              ncol = n_initializations))
+                                              ncol = n_initializations),
+                          noise = noise_entry
+                          )
 
   sess <- tf$compat$v1$Session()
   # initialize parameters
@@ -373,7 +406,7 @@ estimate_one_timecourse_params_tf <- function (
     }
 
     if (sum(!is.nan(current_losses)) < pmin(10, n_initializations)) {
-      # return NULL so the run can be re-initilized
+      # return NULL so the run can be re-initialized
       return(NULL)
     } else {
       valid_summed_loss <- sum(current_losses, na.rm = TRUE)
