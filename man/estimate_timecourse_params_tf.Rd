@@ -75,9 +75,9 @@ library(impulse)
 auto_config_tf()
 
 set.seed(123)
-timecourses <- simulate_timecourses(n = 2)
+timecourses <- simulate_timecourses(n = 2, observation_level_noise = 0.5)
 
-timecourses \%>\%
+z <- timecourses \%>\%
   tidyr::unnest_legacy(measurements) \%>\%
   # separate by true model
   tidyr::nest_legacy(-true_model, .key = "measurements") \%>\%
@@ -87,7 +87,8 @@ timecourses \%>\%
     measurements,
     model,
     estimate_timecourse_params_tf,
-    n_initializations = 20
+    n_initializations = 20,
+    fit_intercept = TRUE
     ))
 
 }

@@ -47,7 +47,7 @@
 #' set.seed(123)
 #' timecourses <- simulate_timecourses(n = 2, observation_level_noise = 0.5)
 #'
-#' timecourses %>%
+#' z <- timecourses %>%
 #'   tidyr::unnest_legacy(measurements) %>%
 #'   # separate by true model
 #'   tidyr::nest_legacy(-true_model, .key = "measurements") %>%
@@ -57,7 +57,8 @@
 #'     measurements,
 #'     model,
 #'     estimate_timecourse_params_tf,
-#'     n_initializations = 20
+#'     n_initializations = 20,
+#'     fit_intercept = TRUE
 #'     ))
 #'
 #' @export
@@ -149,6 +150,7 @@ estimate_timecourse_params_tf <- function(
         n_initializations = current_n_initializations,
         model = model,
         prior_pars = prior_pars,
+        fit_intercept = fit_intercept,
         learning_rate = learning_rate,
         verbose = verbose
       )
@@ -247,6 +249,7 @@ estimate_one_timecourse_params_tf <- function (
     shape(NULL, n_initializations),
     name = "noise"
   )
+
   # either fix offset to zero or keep it as a free parameter
   if (fit_intercept) {
     tzero_offset <- tf$Variable(
@@ -286,8 +289,10 @@ estimate_one_timecourse_params_tf <- function (
     offset_fall_sigmoid <- v_final +
       (tf$subtract(v_inter, v_final) * fall_sigmoid)
 
-    fit_expression <- tf$multiply(rise_sigmoid, offset_fall_sigmoid,
-                                  name = "expression_fitted_values")
+    impulse_dynamics <- tf$multiply(rise_sigmoid, offset_fall_sigmoid,
+                                    name = "impulse_dynamics")
+
+    fit_expression <- tf$add(impulse_dynamics, tzero_offset, name = "expression_fitted_values")
 
   } else {
     stop('model must be either "sigmoid" or "impulse"')
@@ -326,7 +331,7 @@ estimate_one_timecourse_params_tf <- function (
   if (use_prior) {
     # minimize normal likelihood with priors
     norm_target <- tfp$distributions$Normal(loc = expression,
-                                            scale = 0.1)
+                                            scale = noise)
     normal_logLik <- tf$reduce_sum(norm_target$log_prob(fit_expression),
                                    axis = 0L, name = "normal_logLik")
     logPr <- tf$subtract(0, tf$add(normal_logLik, model_log_pr))
@@ -335,7 +340,7 @@ estimate_one_timecourse_params_tf <- function (
     loss <- tf$reduce_sum(logPr, name = "reduce_logPr")
   } else {
     # minimize SS error
-    sum_of_squares <- (expression - fit_expression)^2
+    sum_of_squares <- noise^-2*(expression - fit_expression)^2
     mean_squared_error <- tf$reduce_mean(sum_of_squares,
                                          axis = 0L,
                                          name = "MSE")
@@ -613,7 +618,11 @@ reduce_best_timecourse_params <- function(timecourse_list,
   # range of parameter values for "good parameter sets"
   parameter_range <- good_init_parameters %>%
     dplyr::group_by(tc_id, variable) %>%
-    dplyr::summarize(min_value = min(value), max_value = max(value)) %>%
+    dplyr::summarize(
+      min_value = min(value),
+      max_value = max(value),
+      .groups = "drop"
+      ) %>%
     dplyr::ungroup()
 
   if (reduction_type == "loss-min") {
@@ -628,8 +637,10 @@ reduce_best_timecourse_params <- function(timecourse_list,
     # min absolute sum of v within a tolerance of best fit
     parameter_set_v_abs_sum <- good_init_parameters %>%
       dplyr::group_by(tc_id, init_id) %>%
-      dplyr::summarize(v_abs_sum = sum(abs(value[variable %in%
-                                                   c("v_inter", "v_final")])))
+      dplyr::summarize(
+        v_abs_sum = sum(abs(value[variable %in% c("v_inter", "v_final")])),
+        .groups = "drop"
+        )
 
     parameter_set_v_abs_sum <- parameter_set_v_abs_sum %>%
       dplyr::group_by(tc_id) %>%
@@ -670,10 +681,12 @@ reduce_best_timecourse_params <- function(timecourse_list,
 #' fit_timecourse(timecourse_parameters, model = "sigmoid")
 #'
 #' @export
-fit_timecourse <-
-  function (timecourse_parameters,
-            timepts = seq(0, 90, by = 1),
-            model = "sigmoid", fit.label = "fit") {
+fit_timecourse <- function (
+    timecourse_parameters,
+    timepts = seq(0, 90, by = 1),
+    model = "sigmoid",
+    fit.label = "fit"
+    ) {
 
   stopifnot("data.frame" %in% class(timecourse_parameters),
             nrow(timecourse_parameters) == 1)
@@ -707,6 +720,14 @@ fit_timecourse <-
 
   eval_times$fit <- eval(parse(text = eqtn), eval_times)
 
-  eval_times %>%
+  fitted_timecourse <- eval_times %>%
     dplyr::select(time, !!fit.label := fit)
+
+  if ("tzero_offset" %in% colnames(timecourse_parameters)) {
+    # adjust intercept if an offset is provided
+    fitted_timecourse <- fitted_timecourse %>%
+      dplyr::mutate(!!fit.label := !!rlang::sym(fit.label) + timecourse_parameters$tzero_offset[[1]])
+  }
+
+  return(fitted_timecourse)
 }

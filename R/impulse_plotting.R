@@ -24,16 +24,9 @@ kinetics_plotting <- function(augmented_timecourses,
           paste(reserved_variables, collapse = ", "))
   }
 
-  stopifnot(class(saturation) == "numeric",
-            length(saturation) == 1,
-            saturation > 0.5,
-            saturation < 1)
-  stopifnot(class(max_time) %in% c("numeric", "integer"),
-            length(max_time) == 1,
-            max_time > 0)
-  stopifnot(class(fit_timepoints) %in% c("numeric", "integer"),
-            length(fit_timepoints) == 1,
-            fit_timepoints > 0)
+  checkmate::assertNumber(saturation, lower = 0.5, upper = 1)
+  checkmate::assertNumber(max_time, lower = 0)
+  checkmate::assertNumber(fit_timepoints, lower = 0)
 
   if ("measurements" %in% present_variables) {
     measurements <- augmented_timecourses %>% tidyr::unnest(measurements)
@@ -45,9 +38,8 @@ kinetics_plotting <- function(augmented_timecourses,
 
   } else {
     # no measurements provide
-    kinetics_plot <- ggplot(tibble::tibble(tc_id = NA_integer_[-1],
-                                           time = 0[-1],
-                                           abundance = 0[-1])) +
+    stub_tibble <- tibble::tibble(tc_id = NA_integer_[-1], time = 0[-1], abundance = 0[-1])
+    kinetics_plot <- ggplot(stub_tibble) +
       geom_point(aes(x = time, y = abundance)) +
       facet_wrap(~ tc_id)
   }
@@ -58,10 +50,11 @@ kinetics_plotting <- function(augmented_timecourses,
       dplyr::select(tc_id, best_model, fitted_kinetics) %>%
       tidyr::unnest_legacy(fitted_kinetics)
 
+    possible_nest_vars <- c("rate", "t_rise", "t_fall", "v_inter", "v_final", "tzero_offset")
     timepoints <- seq(from = 0, max_time, length.out = fit_timepoints)
+
     fitted_values <- fitted_kinetics %>%
-      tidyr::nest_legacy(rate, t_rise, t_fall, v_inter, v_final,
-                  .key = "parameters") %>%
+      tidyr::nest(parameters = any_of(possible_nest_vars)) %>%
       dplyr::mutate(fitted_timecourses = purrr::map2(parameters, model,
                                                      fit_timecourse,
                                                      timepts = timepoints)) %>%
