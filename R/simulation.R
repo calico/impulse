@@ -60,7 +60,7 @@ simulate_timecourses <- function (
 add_noise <- function(measurements, measurement_sd, observation_level_noise) {
   measurements %>%
     dplyr::mutate(
-      noise = exp(rnorm(dplyr::n())*observation_level_noise)*measurement_sd,
+      noise = exp(stats::rnorm(dplyr::n())*observation_level_noise)*measurement_sd,
       abundance = stats::rnorm(dplyr::n(),
                                mean = sim_fit,
                                sd = noise)

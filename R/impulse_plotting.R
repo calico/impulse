@@ -54,7 +54,7 @@ kinetics_plotting <- function(augmented_timecourses,
     timepoints <- seq(from = 0, max_time, length.out = fit_timepoints)
 
     fitted_values <- fitted_kinetics %>%
-      tidyr::nest(parameters = any_of(possible_nest_vars)) %>%
+      tidyr::nest(parameters = dplyr::any_of(possible_nest_vars)) %>%
       dplyr::mutate(fitted_timecourses = purrr::map2(parameters, model,
                                                      fit_timecourse,
                                                      timepts = timepoints)) %>%

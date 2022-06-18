@@ -21,20 +21,20 @@ test_that("prior-free minimizing weighted-MSE", {
       use_prior = FALSE,
       fit_intercept = TRUE
     )) %>%
-    mutate(best_timecourse_list = map(timecourse_list, reduce_best_timecourse_params, reduction_type = "loss-min")) %>%
-    unnest_legacy(map(best_timecourse_list, ~ as_tibble(map(., list))))
+    dplyr::mutate(best_timecourse_list = purrr::map(timecourse_list, reduce_best_timecourse_params, reduction_type = "loss-min")) %>%
+    tidyr::unnest_legacy(purrr::map(best_timecourse_list, ~ tibble::as_tibble(purrr::map(., list))))
 
   # compare abundances to fitted abundances
 
   possible_nest_vars <- c("rate", "t_rise", "t_fall", "v_inter", "v_final", "tzero_offset")
   fitted_values <- least_squares_fits %>%
-    unnest_legacy(parameters) %>%
-    select(tc_id, model, variable, value) %>%
-    spread(variable, value) %>%
-    tidyr::nest(parameters = any_of(possible_nest_vars)) %>%
+    tidyr::unnest_legacy(parameters) %>%
+    dplyr::select(tc_id, model, variable, value) %>%
+    tidyr::spread(variable, value) %>%
+    tidyr::nest(parameters = dplyr::any_of(possible_nest_vars)) %>%
     dplyr::mutate(fitted_timecourses = purrr::map2(parameters, model,
                                                    fit_timecourse,
-                                                   timepts = map_fits$measurements[[1]]$time)) %>%
+                                                   timepts = least_squares_fits$measurements[[1]]$time)) %>%
     tidyr::unnest_legacy(fitted_timecourses)
 
   abund_vs_fit <- least_squares_fits %>%
@@ -72,17 +72,17 @@ test_that("Bayesian impulse minimizes MAP estimate", {
       use_prior = TRUE,
       fit_intercept = TRUE
     )) %>%
-    mutate(best_timecourse_list = map(timecourse_list, reduce_best_timecourse_params, reduction_type = "loss-min")) %>%
-    unnest_legacy(map(best_timecourse_list, ~ as_tibble(map(., list))))
+    dplyr::mutate(best_timecourse_list = purrr::map(timecourse_list, reduce_best_timecourse_params, reduction_type = "loss-min")) %>%
+    tidyr::unnest_legacy(purrr::map(best_timecourse_list, ~ tibble::as_tibble(purrr::map(., list))))
 
   # compare abundances to fitted abundances
 
   possible_nest_vars <- c("rate", "t_rise", "t_fall", "v_inter", "v_final", "tzero_offset")
   fitted_values <- map_fits %>%
-    unnest_legacy(parameters) %>%
-    select(tc_id, model, variable, value) %>%
-    spread(variable, value) %>%
-    tidyr::nest(parameters = any_of(possible_nest_vars)) %>%
+    tidyr::unnest_legacy(parameters) %>%
+    dplyr::select(tc_id, model, variable, value) %>%
+    tidyr::spread(variable, value) %>%
+    tidyr::nest(parameters = dplyr::any_of(possible_nest_vars)) %>%
     dplyr::mutate(fitted_timecourses = purrr::map2(parameters, model,
                                                    fit_timecourse,
                                                    timepts = map_fits$measurements[[1]]$time)) %>%

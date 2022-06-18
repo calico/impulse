@@ -25,6 +25,7 @@ utils::globalVariables(c(
   "parameters",
   "measurements",
   "model_pars",
+  "noise",
   "time",
   "v_inter",
   "v_final",
