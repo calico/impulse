@@ -77,7 +77,7 @@ auto_config_tf()
 set.seed(123)
 timecourses <- simulate_timecourses(n = 2, observation_level_noise = 0.5)
 
-z <- timecourses \%>\%
+timecourses \%>\%
   tidyr::unnest_legacy(measurements) \%>\%
   # separate by true model
   tidyr::nest_legacy(-true_model, .key = "measurements") \%>\%
@@ -88,6 +88,7 @@ z <- timecourses \%>\%
     model,
     estimate_timecourse_params_tf,
     n_initializations = 20,
+    use_prior = TRUE,
     fit_intercept = TRUE
     ))
 

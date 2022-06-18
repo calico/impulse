@@ -35,6 +35,8 @@ Suggests:
     gridExtra,
     knitr,
     rcmdcheck,
-    rmarkdown
+    rmarkdown,
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
 RoxygenNote: 7.2.0
+Config/testthat/edition: 3

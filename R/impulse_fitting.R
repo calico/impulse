@@ -47,7 +47,7 @@
 #' set.seed(123)
 #' timecourses <- simulate_timecourses(n = 2, observation_level_noise = 0.5)
 #'
-#' z <- timecourses %>%
+#' timecourses %>%
 #'   tidyr::unnest_legacy(measurements) %>%
 #'   # separate by true model
 #'   tidyr::nest_legacy(-true_model, .key = "measurements") %>%
@@ -122,8 +122,8 @@ estimate_timecourse_params_tf <- function(
     }
   } else {
     prior_pars <- c(
-      "v_sd" = stats::sd(timecourses$log2_fc),
-      "t_max" = max(timecourses$time)
+      "v_sd" = stats::sd(measurements$abundance),
+      "t_max" = max(measurements$time)
       )
   }
 
@@ -350,22 +350,30 @@ estimate_one_timecourse_params_tf <- function (
   }
   train <- optimizer$minimize(loss = loss, name = "train")
 
-  # train the model
-
+  # add data to dict
   if ("noise" %in% colnames(one_timecourse)) {
+
+    if(use_prior) {
+      noise_vec  <- one_timecourse$noise
+    } else {
+      # for fitting a weighted least squares renormalize so we are
+      # still minimizing something close to MSE
+      noise_vec <- sqrt(one_timecourse$noise^2 / mean(one_timecourse$noise^2))
+      }
+
     noise_entry <- matrix(
-      one_timecourse$noise,
+      noise_vec,
       nrow = nrow(one_timecourse),
       ncol = n_initializations
       )
-  } else {
-    # constant noise
-    noise_entry <- matrix(
-      0.2,
-      nrow = nrow(one_timecourse),
-      ncol = n_initializations
-    )
-  }
+    } else {
+      # constant noise
+      noise_entry <- matrix(
+        ifelse(use_prior, 0.2, 1),
+        nrow = nrow(one_timecourse),
+        ncol = n_initializations
+      )
+    }
 
   timecourse_dict <- dict(timepts = matrix(one_timecourse$time,
                                            nrow = nrow(one_timecourse),
@@ -375,6 +383,8 @@ estimate_one_timecourse_params_tf <- function (
                                               ncol = n_initializations),
                           noise = noise_entry
                           )
+
+  # train the model
 
   sess <- tf$compat$v1$Session()
   # initialize parameters
