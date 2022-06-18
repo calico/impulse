@@ -119,22 +119,22 @@ tf_install <- function (conda_env) {
     )
   }
 
-  if (!reticulate::py_module_available("tensorflow_probability")) {
-    print(paste0("Installing TF probability into the ", conda_env, " conda environment"))
-
-    reticulate::conda_install(
-      envname = conda_env,
-      packages = "tensorflow-probability==0.13.0",
-      pip = TRUE
-    )
-  }
-
   if (!reticulate::py_module_available("numpy")) {
     print(paste0("Installing numpy into the ", conda_env, " conda environment"))
 
     reticulate::conda_install(
       envname = conda_env,
       packages = "numpy==1.22.4",
+      pip = TRUE
+    )
+  }
+
+  if (!reticulate::py_module_available("tensorflow_probability")) {
+    print(paste0("Installing TF probability into the ", conda_env, " conda environment"))
+
+    reticulate::conda_install(
+      envname = conda_env,
+      packages = "tensorflow-probability==0.13.0",
       pip = TRUE
     )
   }
