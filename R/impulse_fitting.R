@@ -58,7 +58,7 @@
 #'     model,
 #'     estimate_timecourse_params_tf,
 #'     n_initializations = 20,
-#'     use_prior = FALSE
+#'     use_prior = TRUE,
 #'     fit_intercept = TRUE
 #'     ))
 #'

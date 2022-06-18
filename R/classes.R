@@ -129,5 +129,15 @@ tf_install <- function (conda_env) {
     )
   }
 
+  if (!reticulate::py_module_available("numpy")) {
+    print(paste0("Installing numpy into the ", conda_env, " conda environment"))
+
+    reticulate::conda_install(
+      envname = conda_env,
+      packages = "numpy==1.22.4",
+      pip = TRUE
+    )
+  }
+
   return(invisible(0))
 }
