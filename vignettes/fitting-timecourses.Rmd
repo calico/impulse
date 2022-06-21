@@ -62,7 +62,7 @@ timecourse_parameters <- timecourses %>%
   nest_legacy(-true_model, .key = "measurements") %>%
   # fit all models to each timecourse
   crossing(tibble(model = c("sigmoid", "impulse"))) %>%
-  mutate(timecourse_list = map2(measurements, model, estimate_timecourse_params_tf, n_initializations = 50)) %>%
+  mutate(timecourse_list = map2(measurements, model, estimate_timecourse_params_tf, n_initializations = 50, fit_intercept = FALSE)) %>%
   # reduce each timecourse to best fitting model capturing uncertainty around the best minima
   mutate(best_timecourse_list = map(timecourse_list, reduce_best_timecourse_params, reduction_type = "loss-min")) %>%
   unnest_legacy(map(best_timecourse_list, ~ as_tibble(map(., list))))

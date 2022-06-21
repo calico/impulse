@@ -8,18 +8,18 @@ validate_priors(model, prior_pars)
 }
 \arguments{
 \item{model}{model to fit:
-\itemize{
-  \item{\code{sigmoid}: one sigmoidal response},
-  \item{\code{impulse}: two sigmoidal responses}
+\describe{
+  \item{sigmoid}{one sigmoidal response}
+  \item{impulse}{two sigmoidal responses}
   }}
 
 \item{prior_pars}{Named numeric vector of parameters to use for priors (if use_prior is TRUE)
-\itemize{
-  \item{\code{v_sd}: Gaussian SD of assymptotes (v_inter and v_final)}
-  \item{\code{rate_shape}: Shape of rate Gamma}
-  \item{\code{rate_scale}: Scale of rate Gamma}
-  \item{\code{time_shape}: Shape of t_rise and t_fall - t_rise Gamma}
-  \item{\code{time_scale}: Scale of t_rise and t_fall - t_rise Gamma}
+\describe{
+  \item{v_sd}{Gaussian SD of assymptotes (v_inter and v_final)}
+  \item{rate_shape}{Shape of rate Gamma}
+  \item{rate_scale}{Scale of rate Gamma}
+  \item{time_shape}{Shape of t_rise and t_fall - t_rise Gamma}
+  \item{time_scale}{Scale of t_rise and t_fall - t_rise Gamma}
   }}
 }
 \description{

@@ -25,6 +25,7 @@ utils::globalVariables(c(
   "parameters",
   "measurements",
   "model_pars",
+  "noise",
   "time",
   "v_inter",
   "v_final",
@@ -116,6 +117,16 @@ tf_install <- function (conda_env) {
       envname = conda_env,
       version = 2.5,
       restart_session = FALSE
+    )
+  }
+
+  if (!reticulate::py_module_available("numpy")) {
+    print(paste0("Installing numpy into the ", conda_env, " conda environment"))
+
+    reticulate::conda_install(
+      envname = conda_env,
+      packages = "numpy==1.22.4",
+      pip = TRUE
     )
   }
 

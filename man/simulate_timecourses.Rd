@@ -10,7 +10,8 @@ simulate_timecourses(
   timepts = seq(0, 120, by = 5),
   prior_pars = c(v_sd = 1.2, rate_shape = 2, rate_scale = 0.25, time_shape = 1,
     time_scale = 30),
-  measurement_sd = 0.2
+  measurement_sd = 0.2,
+  observation_level_noise = 0
 )
 }
 \arguments{
@@ -21,15 +22,19 @@ simulate_timecourses(
 \item{timepts}{a numeric vector of timepoints to fit}
 
 \item{prior_pars}{Named numeric vector of parameters to use for priors (if use_prior is TRUE)
-\itemize{
-  \item{\code{v_sd}: Gaussian SD of assymptotes (v_inter and v_final)}
-  \item{\code{rate_shape}: Shape of rate Gamma}
-  \item{\code{rate_scale}: Scale of rate Gamma}
-  \item{\code{time_shape}: Shape of t_rise and t_fall - t_rise Gamma}
-  \item{\code{time_scale}: Scale of t_rise and t_fall - t_rise Gamma}
+\describe{
+  \item{v_sd}{Gaussian SD of assymptotes (v_inter and v_final)}
+  \item{rate_shape}{Shape of rate Gamma}
+  \item{rate_scale}{Scale of rate Gamma}
+  \item{time_shape}{Shape of t_rise and t_fall - t_rise Gamma}
+  \item{time_scale}{Scale of t_rise and t_fall - t_rise Gamma}
   }}
 
 \item{measurement_sd}{gaussian measurement noise to add}
+
+\item{observation_level_noise}{scale samples by
+exp(rnorm(1)*\code{observation_level_noise}) to introduce samples with
+varying noise levels. Set a zero by default for a homoschedastic model.}
 }
 \description{
 Simulate timecourses
