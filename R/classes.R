@@ -115,7 +115,7 @@ tf_install <- function (conda_env) {
     tensorflow::install_tensorflow(
       method = "conda",
       envname = conda_env,
-      version = 2.5,
+      version = 2.9,
       restart_session = FALSE
     )
   }
@@ -125,7 +125,7 @@ tf_install <- function (conda_env) {
 
     reticulate::conda_install(
       envname = conda_env,
-      packages = "numpy==1.22.4",
+      packages = "numpy==1.23",
       pip = TRUE
     )
   }
@@ -135,7 +135,7 @@ tf_install <- function (conda_env) {
 
     reticulate::conda_install(
       envname = conda_env,
-      packages = "tensorflow-probability==0.13.0",
+      packages = "tensorflow-probability==0.17.0",
       pip = TRUE
     )
   }
