@@ -8,10 +8,12 @@
 #' @return a ggplot
 #'
 #' @export
-kinetics_plotting <- function(augmented_timecourses,
-                              saturation = 0.9,
-                              max_time,
-                              fit_timepoints = 100) {
+kinetics_plotting <- function(
+  augmented_timecourses,
+  saturation = 0.9,
+  max_time,
+  fit_timepoints = 100
+) {
 
   stopifnot("tbl_df" %in% class(augmented_timecourses))
   stopifnot("tc_id" %in% colnames(augmented_timecourses))
@@ -20,8 +22,7 @@ kinetics_plotting <- function(augmented_timecourses,
   present_variables <- intersect(reserved_variables,
                                  colnames(augmented_timecourses))
   if (length(present_variables) == 0) {
-    stop ("no aesthetic variables present; aesthetic variables are: ",
-          paste(reserved_variables, collapse = ", "))
+    cli::cli_abort("no aesthetic variables present; aesthetic variables are: {.field {reserved_variables}}")
   }
 
   checkmate::assertNumber(saturation, lower = 0.5, upper = 1)
@@ -51,6 +52,19 @@ kinetics_plotting <- function(augmented_timecourses,
       tidyr::unnest_legacy(fitted_kinetics)
 
     possible_nest_vars <- c("rate", "t_rise", "t_fall", "v_inter", "v_final", "tzero_offset")
+    missing_nest_vars <- setdiff(possible_nest_vars, colnames(fitted_kinetics))
+
+    if (length(missing_nest_vars) > 0) {
+      for (x in missing_nest_vars) {
+        if (x == "tzero_offset") {
+          fitted_kinetics <- fitted_kinetics %>% dplyr::mutate(tzero_offset = 0)
+        } else {
+          fitted_kinetics <- fitted_kinetics %>%
+            dplyr::mutate(!!rlang::sym(x) := NA_real_)
+        }
+      }
+    }
+
     timepoints <- seq(from = 0, max_time, length.out = fit_timepoints)
 
     fitted_values <- fitted_kinetics %>%
@@ -68,7 +82,7 @@ kinetics_plotting <- function(augmented_timecourses,
         dplyr::filter(model == best_model),
       fitted_values,
       saturation = saturation
-      )
+    )
 
     kinetics_plot <- kinetics_plot +
       geom_rect(data = kinetic_intervals$asympote_aesthetics_df,
@@ -110,12 +124,14 @@ kinetics_plotting <- function(augmented_timecourses,
 
   }
 
-  kinetics_plot
+  return(kinetics_plot)
 }
 
-kinetic_aesthetics <- function(fitted_kinetics,
-                               fitted_values,
-                               saturation = 0.9) {
+kinetic_aesthetics <- function(
+    fitted_kinetics,
+    fitted_values,
+    saturation = 0.9
+    ) {
 
   # find fitted kinetic value at timing coefficient
   time_aesthetics_df <- fitted_kinetics %>%
@@ -132,22 +148,27 @@ kinetic_aesthetics <- function(fitted_kinetics,
 
   # find satuation time for assymptote
   asympote_aesthetics_df <- fitted_kinetics %>%
-    dplyr::select(tc_id, model, rate, t_rise, t_fall, v_inter, v_final) %>%
-    tidyr::gather(par, value, -tc_id, -model, -rate, -v_inter, -v_final) %>%
+    dplyr::select(tc_id, model, rate, t_rise, t_fall, v_inter, v_final, tzero_offset) %>%
+    tidyr::gather(par, value, -tc_id, -model, -rate, -v_inter, -v_final, -tzero_offset) %>%
     dplyr::filter(!is.na(value)) %>%
     # match t_rise to v_inter and t_fall to v_final
-    dplyr::mutate(assymp = dplyr::case_when(par == "t_rise" ~ v_inter,
-                                            par == "t_fall" ~ v_final)) %>%
+    dplyr::mutate(assymp = dplyr::case_when(par == "t_rise" ~ v_inter + tzero_offset ,
+                                            par == "t_fall" ~ v_final + tzero_offset)) %>%
     dplyr::mutate(assymp_type = dplyr::case_when(
       par == "t_rise" ~ "v_inter",
       par == "t_fall" ~ "v_final")) %>%
     # derive saturation time for x-axis
-    dplyr::mutate(t_saturation_start = saturation_time(1 - saturation,
-                                                       value,
-                                                       rate),
-                  t_saturation_end = saturation_time(saturation,
-                                                     value,
-                                                     rate)) %>%
+    dplyr::mutate(
+      t_saturation_start = saturation_time(
+        1 - saturation,
+        value,
+        rate
+      ),
+      t_saturation_end = saturation_time(
+        saturation,
+        value,
+        rate
+      )) %>%
     dplyr::select(tc_id, model, assymp_type, assymp,
                   t_saturation_start, t_saturation_end)
 
@@ -156,7 +177,5 @@ kinetic_aesthetics <- function(fitted_kinetics,
 }
 
 saturation_time <- function(saturation, c_time, rate) {
-
   c_time + log(saturation / (1 - saturation)) / rate
-
 }

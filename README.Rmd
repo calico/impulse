@@ -52,10 +52,9 @@ sigmoid_impulse_plot <- function(timecourse_parameters) {
     scale_x_continuous("Time") +
     theme_bw() +
     theme(text = element_text(size = 15), legend.position = "top")
-   
 }
 
-sigmoid_impulse_plot(data_frame(t_rise = 25, rate = 0.25, v_inter = 3, v_final = -3, t_fall = 45))
+sigmoid_impulse_plot(tibble(t_rise = 25, rate = 0.25, v_inter = 3, v_final = -3, t_fall = 45))
 ```
 
 ### sigmoid
@@ -99,4 +98,21 @@ Once conda and impulse are installed, A conda environment configured with Tensor
 
 ```{r, eval=FALSE}
 auto_config_tf()
+```
+
+Alternatively, create a minimal environment with:
+
+```{bash venv_setup, eval = FALSE}
+<<PATH TO PYTHON BINARY>> -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip wheel setuptools ipykernel
+pip install -r requirements.txt
+```
+
+Where, requirements.txt is just:
+
+```{bash requirements, eval = FALSE}
+tensorflow==2.9.*
+numpy==1.23.*
+tensorflow-probability==0.17.*
 ```
