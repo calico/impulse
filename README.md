@@ -18,11 +18,11 @@ value(s) and asymptote(s).
 
 The core functionality of **impulse** is:
 
--   Simulate timecourse parameters and resulting timecourses
--   Fit sigmoid and impulse models to timecourses with or without priors
-    on kinetic parameters
--   Compare sigmoid and impulse models
--   Visualize measurements and parametric fits
+- Simulate timecourse parameters and resulting timecourses
+- Fit sigmoid and impulse models to timecourses with or without priors
+  on kinetic parameters
+- Compare sigmoid and impulse models
+- Visualize measurements and parametric fits
 
 ## The models
 
@@ -33,21 +33,31 @@ between timecourses and kinetic paramters, but the kinetic parameters
 are generally more meaningful since they indicate the timing and
 magnitdue of responses.
 
-A sigmoid with parameters {t\_rise = 25, v\_inter = 3, rate = 0.25} and
-an impulse with two additional parameters {t\_fall = 45, v\_final = -3}
-are shown. The t\_rise of 25 indicates a half-max time of 25 and
-v\_inter of 3 indicates saturation at 3. In the impulse model there is a
-second response with a half-max time of 45 and final asymptote at -3.
+A sigmoid with parameters {t_rise = 25, v_inter = 3, rate = 0.25} and an
+impulse with two additional parameters {t_fall = 45, v_final = -3} are
+shown. The t_rise of 25 indicates a half-max time of 25 and v_inter of 3
+indicates saturation at 3. In the impulse model there is a second
+response with a half-max time of 45 and final asymptote at -3.
 
 ![](man/figures/README-sigmoid_impulse_compare-1.png)<!-- -->
 
 ### sigmoid
 
-![Sigmoid](https://github.com/calico/impulse/blob/master/man/figures/sigmoid.png)
+<figure>
+<img
+src="https://github.com/calico/impulse/blob/master/man/figures/sigmoid.png"
+alt="Sigmoid" />
+<figcaption aria-hidden="true">Sigmoid</figcaption>
+</figure>
 
 ### implulse
 
-![Impulse](https://github.com/calico/impulse/blob/master/man/figures/impulse.png)
+<figure>
+<img
+src="https://github.com/calico/impulse/blob/master/man/figures/impulse.png"
+alt="Impulse" />
+<figcaption aria-hidden="true">Impulse</figcaption>
+</figure>
 
 ## *Impulse* functionality
 
@@ -65,7 +75,7 @@ impulse models since there are natural constraints on parameter values
 which should hold (non-negative rates, non-negative times, rise before
 fall). When these constraints are violated, a good fit may occur, but
 interpretability of timing and effect sizes will be lost. The vignette
-*setting\_priors* describes how to formulate the priors and can be used
+*setting_priors* describes how to formulate the priors and can be used
 to guide the tuning of parameters for other application.
 
 ## Installation
@@ -97,4 +107,21 @@ with TensorFlow can be created using:
 
 ``` r
 auto_config_tf()
+```
+
+Alternatively, create a minimal environment with:
+
+``` bash
+<<PATH TO PYTHON BINARY>> -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip wheel setuptools ipykernel
+pip install -r requirements.txt
+```
+
+Where, requirements.txt is just:
+
+``` bash
+tensorflow==2.9.*
+numpy==1.23.*
+tensorflow-probability==0.17.*
 ```
