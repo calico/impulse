@@ -59,7 +59,7 @@ test_that("prior-free minimizing weighted-MSE", {
     tolerance = 0.0001
   )
 
-  })
+})
 
 test_that("Bayesian impulse minimizes MAP estimate", {
 
@@ -107,9 +107,63 @@ test_that("Bayesian impulse minimizes MAP estimate", {
     object = abund_vs_fit$eval_logLik,
     expected = as.numeric(abund_vs_fit$logLik),
     tolerance = 0.001
-    )
+  )
+})
 
-  ### TO DO - compare MAP parameters to prior estimates
+test_that("Sigmoid Likelihood is correct", {
+
+  #CONDA_ENV <- "base397"
+  #CONDA_PATH <- "/scratch4/alex/python39-for-sean/miniforge3/bin/conda"
+  #reticulate::use_condaenv(
+  #  CONDA_ENV,
+  #  conda = CONDA_PATH,
+  #  required=TRUE
+  #)
+
+  fitted_kinetics <- impulse::estimate_timecourse_params_tf(
+    measurements = example_timecourse,
+    prior_pars = c(v_sd = 1.2, rate_shape = 2, rate_scale = 0.25, time_shape = 2, time_scale = 15),
+    model = "sigmoid",
+    use_prior = TRUE,
+    n_initializations = 300L,
+    learning_rate = 0.2,
+    n_iterations = 1000,
+    fit_intercept = TRUE
+  )
+
+  # select a consensus parameter set
+  consensus_kinetics <- impulse::reduce_best_timecourse_params(fitted_kinetics)
+
+  # calculate logLik
+
+  fitted_timecourses <- fit_timecourse(
+    consensus_kinetics$parameters %>%
+      dplyr::select(variable, value) %>%
+      tidyr::spread(variable, value),
+    timepts = unique(example_timecourse$time),
+    model = "sigmoid"
+  )
+
+  combined_data <- example_timecourse %>%
+    dplyr::left_join(fitted_timecourses, by = "time")
+
+  #ggplot(combined_data, aes(x = time, y = abundance)) +
+  #  geom_point() +
+  #  geom_line(aes(y = fit), color = "red") +
+  #  ggtitle("Example timecourse with sigmoid fit") +
+  #  theme_minimal()
+
+  timecourse_logLik <- combined_data %>%
+    dplyr::mutate(
+      normal_logLik = dnorm(abundance, fit, sd = 0.2, log = TRUE)
+    ) %>%
+    dplyr::summarize(logLik = sum(normal_logLik))
+
+  testthat::expect_equal(
+    object = timecourse_logLik$logLik,
+    expected = consensus_kinetics$loss$logLik[1],
+    tolerance = 0.01
+    )
 
 })
 

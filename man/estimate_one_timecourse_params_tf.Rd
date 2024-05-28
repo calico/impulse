@@ -13,6 +13,7 @@ estimate_one_timecourse_params_tf(
   prior_pars = NULL,
   fit_intercept = FALSE,
   learning_rate = 0.1,
+  n_iterations = 100,
   verbose = FALSE
 )
 }
@@ -44,6 +45,8 @@ time and abundance variables}
 \item{fit_intercept}{If TRUE, the intercept will be fit, if FALSE, the intercept will be constrainted to zero}
 
 \item{learning_rate}{learning rate for the Adams optimizer}
+
+\item{n_iterations}{the number of iterations to run the optimizer}
 
 \item{verbose}{if TRUE then print additional information}
 }
