@@ -112,14 +112,6 @@ test_that("Bayesian impulse minimizes MAP estimate", {
 
 test_that("Sigmoid Likelihood is correct", {
 
-  #CONDA_ENV <- "base397"
-  #CONDA_PATH <- "/scratch4/alex/python39-for-sean/miniforge3/bin/conda"
-  #reticulate::use_condaenv(
-  #  CONDA_ENV,
-  #  conda = CONDA_PATH,
-  #  required=TRUE
-  #)
-
   fitted_kinetics <- impulse::estimate_timecourse_params_tf(
     measurements = example_timecourse,
     prior_pars = c(v_sd = 1.2, rate_shape = 2, rate_scale = 0.25, time_shape = 2, time_scale = 15),
