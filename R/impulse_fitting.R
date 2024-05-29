@@ -28,6 +28,7 @@
 #'   }
 #' @param fit_intercept If TRUE, the intercept will be fit, if FALSE, the intercept will be constrainted to zero
 #' @param learning_rate learning rate for the Adams optimizer
+#' @param n_iterations the number of iterations to run the optimizer
 #' @param verbose if TRUE then print additional information
 #'
 #' @return a timecourse list:
@@ -77,6 +78,7 @@ estimate_timecourse_params_tf <- function(
     "time_scale" = 15),
   fit_intercept = FALSE,
   learning_rate = 0.1,
+  n_iterations = 100,
   verbose = FALSE
   ) {
 
@@ -105,6 +107,7 @@ estimate_timecourse_params_tf <- function(
   checkmate::assertLogical(use_prior, len = 1)
   checkmate::assertLogical(fit_intercept, len = 1)
   checkmate::assertNumber(learning_rate, lower = 0)
+  checkmate::assertNumber(n_iterations, lower = 1)
   checkmate::assertLogical(verbose, len = 1)
 
   # test parameters supplied for parameter initialization / priors
@@ -153,6 +156,7 @@ estimate_timecourse_params_tf <- function(
         prior_pars = prior_pars,
         fit_intercept = fit_intercept,
         learning_rate = learning_rate,
+        n_iterations = n_iterations,
         verbose = verbose
       )
 
@@ -197,6 +201,7 @@ estimate_one_timecourse_params_tf <- function (
   prior_pars = NULL,
   fit_intercept = FALSE,
   learning_rate = 0.1,
+  n_iterations = 100,
   verbose = FALSE
   ) {
 
@@ -207,6 +212,7 @@ estimate_one_timecourse_params_tf <- function (
   checkmate::assertNumber(learning_rate, lower = 0)
   checkmate::assertLogical(verbose, len = 1)
   checkmate::assertLogical(fit_intercept, len = 1)
+  checkmate::assertNumber(n_iterations, lower = 1)
 
   tfp <- reticulate::import("tensorflow_probability")
 
@@ -368,6 +374,12 @@ estimate_one_timecourse_params_tf <- function (
       )
     } else {
       # constant noise
+
+      noise_value <- ifelse(use_prior, 0.2, 1)
+      if (verbose) {
+        cli::cli_alert("No noise variable is present so setting noise to {.field {noise_value}}")
+      }
+
       noise_entry <- matrix(
         ifelse(use_prior, 0.2, 1),
         nrow = nrow(one_timecourse),
@@ -407,7 +419,7 @@ estimate_one_timecourse_params_tf <- function (
   continue <- TRUE
   while (continue) {
     # train
-    for (i in 1:100) {
+    for (i in 1:n_iterations) {
       sess$run(
         train,
         feed_dict = timecourse_dict
